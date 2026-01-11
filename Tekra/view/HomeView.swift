@@ -29,29 +29,24 @@ struct HomeView: View {
                 Spacer()
 
                 // MAIN MENU
-                VStack(spacing: 14) {
+                VStack(spacing: 20) {
 
                     NavigationLink(destination: GameView()) {
-                        MenuButton(title: "Start Game", icon: "play.fill")
+                        MenuButton(title: "Start Game", icon: "play")
                     }
 
                     NavigationLink(destination: EventView()) {
-                        MenuButton(title: "Events", icon: "bolt.fill")
+                        MenuButton(title: "Events", icon: "gamecontroller")
                     }
 
                     NavigationLink(destination: SettingsView()) {
-                        MenuButton(title: "Settings", icon: "gearshape.fill")
+                        MenuButton(title: "Settings", icon: "gear")
                     }
 
                     NavigationLink(destination: Text("Coming Soon")) {
-                        MenuButton(title: "Tekra Soon", icon: "hourglass")
+                        MenuButton(title: "Coming Soon", icon: "hourglass")
                     }
                 }
-
-                Spacer()
-
-                Text("v1.0")
-                    .opacity(0.4)
             }
             .padding()
         }
@@ -65,5 +60,4 @@ struct HomeView: View {
                 ThemeManager(theme: ThemeLoader.load())
             )
     }
-
 }

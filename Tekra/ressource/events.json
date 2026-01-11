@@ -3,21 +3,21 @@
         "id": 1,
         "title": "Street Riot",
         "description": "A gang blocks your way. Fight through them!",
-        "enemyFile": "axel_blaze",
+        "enemyFile": "enemy",
         "rewardExp": 50
     },
     {
         "id": 2,
         "title": "Shadow Dojo",
         "description": "Ninjas attack from the rooftops.",
-        "enemyFile": "sly",
+        "enemyFile": "enemy",
         "rewardExp": 80
     },
     {
         "id": 3,
         "title": "Inferno Lair",
         "description": "The Inferno Lord awaits you.",
-        "enemyFile": "axel_blaze",
+        "enemyFile": "enemy",
         "rewardExp": 150
     }
 ]
