@@ -1,5 +1,5 @@
 //
-//  EventView.swift
+//  StoryView.swift
 //  Tekra
 //
 //  Created by Tufan Cakir on 11.01.26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct EventView: View {
+struct StoryView: View {
 
     @EnvironmentObject var themeManager: ThemeManager
     var theme: Theme { themeManager.current }
@@ -26,16 +26,8 @@ struct EventView: View {
 
     @State private var levelCleared = false
 
-    @State private var events: [GameEvent] = []
-    @State private var currentEventIndex = 0
-    @State private var showEventSelect = true
-
-    var currentEvent: GameEvent? {
-        events.indices.contains(currentEventIndex)
-            ? events[currentEventIndex] : nil
-    }
-
-    let screenLimit: CGFloat = 140
+    @State private var stories: [StoryChapter] = StoryLoader.load()
+    @State private var showStorySelect = true
 
     var player: Fighter? {
         roster.indices.contains(playerIndex) ? roster[playerIndex] : nil
@@ -92,21 +84,19 @@ struct EventView: View {
                 )
             }
 
-            if showEventSelect {
+            if showStorySelect {
                 Color.black.opacity(0.85).ignoresSafeArea()
 
                 VStack(spacing: 18) {
-                    Text("Event Mode")
+                    Text("STORY MODE")
                         .font(.largeTitle.bold())
                         .foregroundColor(.white)
 
-                    ForEach(Array(events.enumerated()), id: \.offset) { pair in
-                        let index = pair.offset
-                        let event = pair.element
+                    ForEach(stories) { story in
                         Button {
-                            startEvent(index)
+                            startStory(story)
                         } label: {
-                            Text(event.title)
+                            Text(story.title)
                                 .font(.title2.bold())
                                 .frame(maxWidth: .infinity)
                                 .padding()
@@ -157,16 +147,22 @@ struct EventView: View {
                         )
                 )
                 .padding(.horizontal, 24)
+
             }
 
             if levelCleared {
-                Text("LEVEL CLEARED")
-                    .font(.largeTitle.bold())
-                    .foregroundColor(.yellow)
+                VStack {
+                    Spacer()
+                    Text("LEVEL CLEARED")
+                        .font(.largeTitle.bold())
+                        .foregroundColor(.yellow)
+                        .padding(.bottom, 140)
+                }
+                .transition(.opacity)
             }
 
             // 🎰 ARCADE FOOTER (nur im Kampf sichtbar)
-            if !showEventSelect {
+            if !showStorySelect {
                 VStack {
                     Spacer()
                     HStack(spacing: 24) {
@@ -207,34 +203,17 @@ struct EventView: View {
         .onAppear(perform: loadGame)
     }
 
-    // MARK: Game Logic
     func loadGame() {
-
         roster = PlayerRosterLoader.load()
-        events = EventLoader.load()
-
         playerIndex = 0
         enemyIndex = 0
         playerExp = 0
         levelCleared = false
-
-        if let firstEvent = events.first {
-            enemies = EnemyWaveLoader.load(file: firstEvent.enemyFile)
-            enemyHP = enemies.first?.maxHP ?? 0
-        } else {
-            enemies = []
-            enemyHP = 0
-            levelCleared = true
-            showEventSelect = true
-        }
     }
 
-    func startEvent(_ index: Int) {
-        showEventSelect = false
-        currentEventIndex = index
-
-        let event = events[index]
-        enemies = EnemyWaveLoader.load(file: event.enemyFile)
+    func startStory(_ story: StoryChapter) {
+        showStorySelect = false
+        enemies = story.enemies
         enemyIndex = 0
         enemyHP = enemies.first?.maxHP ?? 0
         levelCleared = false
@@ -259,7 +238,6 @@ struct EventView: View {
     }
 
     func nextEnemy() {
-
         playerExp = min(playerExp + 25, 100)
 
         let nextEnemyIndex = enemyIndex + 1
@@ -269,25 +247,14 @@ struct EventView: View {
             return
         }
 
-        // Event vorbei → nächstes Event laden
-        let nextEventIndex = currentEventIndex + 1
-        if events.indices.contains(nextEventIndex) {
-            currentEventIndex = nextEventIndex
-            let event = events[currentEventIndex]
-
-            enemies = EnemyWaveLoader.load(file: event.enemyFile)
-            enemyIndex = 0
-            enemyHP = enemies.first?.maxHP ?? 0
-            return
-        }
-
+        // Kapitel fertig
         levelCleared = true
-        showEventSelect = true
+        showStorySelect = true
     }
 }
 
 #Preview {
-    EventView()
+    StoryView()
         .environmentObject(
             ThemeManager(theme: ThemeLoader.load())
         )

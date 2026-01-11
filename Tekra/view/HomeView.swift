@@ -10,6 +10,9 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject var themeManager: ThemeManager
     var theme: Theme { themeManager.current }
+    @State private var logoScale = 0.8
+    @State private var logoOpacity = 0.0
+    @State private var logoOffsetX: CGFloat = -400  // startet außerhalb links
 
     var body: some View {
 
@@ -24,7 +27,19 @@ struct HomeView: View {
                 Image("tekra_logo")
                     .resizable()
                     .scaledToFit()
-                    .frame(height: 300)
+                    .frame(width: 300)
+                    .scaleEffect(logoScale)
+                    .opacity(logoOpacity)
+                    .offset(x: logoOffsetX)  // 👈 Position animieren
+                    .onAppear {
+                        withAnimation(
+                            .interpolatingSpring(stiffness: 120, damping: 14)
+                        ) {
+                            logoScale = 1.0
+                            logoOpacity = 1.0
+                            logoOffsetX = 0
+                        }
+                    }
 
                 Spacer()
 
@@ -32,19 +47,26 @@ struct HomeView: View {
                 VStack(spacing: 20) {
 
                     NavigationLink(destination: GameView()) {
-                        MenuButton(title: "Start Game", icon: "play")
+                        MenuButton(title: "Start Game", icon: "bolt")
+                    }
+
+                    NavigationLink(destination: StoryView()) {
+                        MenuButton(title: "Story", icon: "book")
+                    }
+
+                    NavigationLink(destination: ArcadeView()) {
+                        MenuButton(
+                            title: "Arcade",
+                            icon: "arcade.stick.console"
+                        )
                     }
 
                     NavigationLink(destination: EventView()) {
-                        MenuButton(title: "Events", icon: "gamecontroller")
+                        MenuButton(title: "Event", icon: "gamecontroller")
                     }
 
                     NavigationLink(destination: SettingsView()) {
                         MenuButton(title: "Settings", icon: "gear")
-                    }
-
-                    NavigationLink(destination: Text("Coming Soon")) {
-                        MenuButton(title: "Coming Soon", icon: "hourglass")
                     }
                 }
             }

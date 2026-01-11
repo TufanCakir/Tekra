@@ -2,7 +2,7 @@
     {
         "id": 1,
         "name": "Street Punk",
-        "image": "sly",
+        "image": "axel_blaze",
         "maxHP": 80,
         "attack": 6
     },
@@ -16,7 +16,7 @@
     {
         "id": 3,
         "name": "Inferno Lord",
-        "image": "sly",
+        "image": "axel_blaze",
         "maxHP": 180,
         "attack": 18
     }

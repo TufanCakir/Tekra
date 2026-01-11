@@ -24,19 +24,43 @@ struct ActionButton: View {
         let set = energy == .fire ? theme.energy.fire : theme.energy.ice
 
         Button(action: action) {
-            Text(title)
-                .font(.system(size: 18, weight: .black))
-                .foregroundStyle(Color(hex: theme.text.primary))
-                .frame(width: 140, height: 44)
-                .background(
-                    RoundedRectangle(cornerRadius: theme.cornerRadius)
-                        .fill(Color(hex: set.core))
-                        .shadow(color: Color(hex: set.glow), radius: 16)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: theme.cornerRadius)
-                        .stroke(theme.chromeGradient(), lineWidth: 2)
-                )
+            ZStack {
+                // Inner Button
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(hex: theme.metal.highlight),
+                                Color(hex: theme.metal.edgeGlow),
+                                Color(hex: theme.metal.shadow),
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    colors: [
+                                        Color(hex: theme.metal.highlight),
+                                        Color(hex: theme.metal.edgeGlow),
+                                        Color(hex: theme.metal.shadow),
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 2
+                            )
+                    )
+
+                // Title
+                Text(title)
+                    .font(.system(size: 16, weight: .black))
+                    .foregroundStyle(Color(hex: theme.text.primary))
+                    .shadow(radius: 4)
+            }
+            .frame(width: 92, height: 92)  // 🕹️ Arcade Button Size
         }
     }
 }

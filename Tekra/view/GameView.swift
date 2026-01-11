@@ -26,6 +26,8 @@ struct GameView: View {
     @State private var levelCleared = false
     @State private var events: [GameEvent] = []
     @State private var currentEventIndex = 0
+    @State private var stickPower: CGFloat = 0
+    @State private var fireTimer: Timer?
 
     var currentEvent: GameEvent? {
         events.indices.contains(currentEventIndex)
@@ -80,24 +82,6 @@ struct GameView: View {
 
                     Spacer()
 
-                    // Buttons
-                    HStack {
-                        ActionButton(
-                            title: "ATTACK",
-                            energy: .fire,
-                            action: attack
-                        )
-                        ActionButton(
-                            title: "SWITCH",
-                            energy: .ice,
-                            action: switchPlayer
-                        )
-                    }
-
-                    .font(.system(size: 20, weight: .bold))
-                    .frame(height: 44)
-                    .buttonStyle(.borderedProminent)
-                    .padding(.bottom)
                 }
                 .background(
                     Image("skybox")
@@ -108,12 +92,71 @@ struct GameView: View {
 
             if levelCleared {
                 Text("LEVEL CLEARED")
-                    .font(.system(size: 38, weight: .black))
-                    .foregroundStyle(theme.chromeGradient())
-                    .shadow(color: Color(hex: theme.warning), radius: 30)
+                    .font(.largeTitle.bold())
+                    .foregroundColor(.yellow)
+            }
+
+            // 🎰 ARCADE FOOTER (pinned to bottom)
+            VStack {
+                Spacer()
+
+                HStack(alignment: .bottom, spacing: 20) {
+
+                    // LEFT – Stick
+                    ArcadeStick { power in
+                        updateStickPower(power)
+                    }
+
+                    // RIGHT – Arcade Buttons (wrapfähig)
+                    LazyVGrid(
+                        columns: [
+                            GridItem(.adaptive(minimum: 70), spacing: 16)
+                        ],
+                        spacing: 16
+                    ) {
+                        ArcadeActionButton(title: "LP", color: .blue) {
+                            switchPlayer()
+                        }
+                        ArcadeActionButton(title: "RP", color: .yellow) {
+                            attack()
+                        }
+                        ArcadeActionButton(title: "LK", color: .red) {
+                            attack()
+                        }
+                        ArcadeActionButton(title: "RK", color: .green) {
+                            attack()
+                        }
+                        ArcadeActionButton(title: "LP", color: .orange) {
+                            attack()
+                        }
+                        ArcadeActionButton(title: "RP", color: .indigo) {
+                            attack()
+                        }
+                    }
+                }
+                .padding()
             }
         }
         .onAppear(perform: loadGame)
+    }
+
+    func updateStickPower(_ power: CGFloat) {
+        stickPower = power
+
+        if power == 0 {
+            fireTimer?.invalidate()
+            fireTimer = nil
+            return
+        }
+
+        if fireTimer == nil {
+            fireTimer = Timer.scheduledTimer(
+                withTimeInterval: max(0.05, 0.35 - power * 0.3),
+                repeats: true
+            ) { _ in
+                attack()
+            }
+        }
     }
 
     // MARK: Game Logic

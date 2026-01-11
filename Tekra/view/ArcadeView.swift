@@ -1,5 +1,5 @@
 //
-//  EventView.swift
+//  ArcadeView.swift
 //  Tekra
 //
 //  Created by Tufan Cakir on 11.01.26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct EventView: View {
+struct ArcadeView: View {
 
     @EnvironmentObject var themeManager: ThemeManager
     var theme: Theme { themeManager.current }
@@ -26,14 +26,14 @@ struct EventView: View {
 
     @State private var levelCleared = false
 
-    @State private var events: [GameEvent] = []
-    @State private var currentEventIndex = 0
-    @State private var showEventSelect = true
-
-    var currentEvent: GameEvent? {
-        events.indices.contains(currentEventIndex)
-            ? events[currentEventIndex] : nil
-    }
+    @State private var waves: [ArcadeWave] = ArcadeLoader.load()
+    @State private var waveIndex = 0
+    @State private var showArcadeSelect = true
+    @State private var roundIndex = 0
+    @State private var showRoundClear = false
+    @State private var showWaveClear = false
+    @State private var stickPower: CGFloat = 0
+    @State private var fireTimer: Timer?
 
     let screenLimit: CGFloat = 140
 
@@ -76,7 +76,6 @@ struct EventView: View {
                                 .scaleEffect(x: -1, y: 1)
                                 .offset(x: p2X)
                         }
-
                     } else {
                         Text("Loading fighters...")
                             .foregroundColor(.white)
@@ -92,21 +91,97 @@ struct EventView: View {
                 )
             }
 
-            if showEventSelect {
+            VStack {
+                Text("WAVE \(waveIndex + 1)")
+                    .font(.system(size: 28, weight: .black))
+                    .foregroundColor(.yellow)
+                    .shadow(radius: 6)
+                    .padding(.top, 14)
+
+                Spacer()
+            }
+
+            if levelCleared {
+                Text("LEVEL CLEARED")
+                    .font(.largeTitle.bold())
+                    .foregroundColor(.yellow)
+            }
+
+            if showRoundClear {
+                Text("ROUND CLEARED")
+                    .font(.system(size: 38, weight: .black))
+                    .foregroundColor(.yellow)
+                    .shadow(radius: 12)
+                    .transition(.scale)
+            }
+
+            if showWaveClear {
+                Text("WAVE CLEARED")
+                    .font(.system(size: 40, weight: .black))
+                    .foregroundColor(.orange)
+                    .shadow(radius: 16)
+                    .transition(.scale)
+            }
+
+            // 🎰 ARCADE FOOTER (pinned to bottom)
+            if !showArcadeSelect {
+                VStack {
+                    Spacer()
+
+                    HStack(alignment: .bottom, spacing: 20) {
+
+                        // LEFT – Stick
+                        ArcadeStick { power in
+                            updateStickPower(power)
+                        }
+
+                        // RIGHT – Arcade Buttons (wrapfähig)
+                        LazyVGrid(
+                            columns: [
+                                GridItem(.adaptive(minimum: 70), spacing: 16)
+                            ],
+                            spacing: 16
+                        ) {
+                            ArcadeActionButton(title: "LP", color: .blue) {
+                                switchPlayer()
+                            }
+                            ArcadeActionButton(title: "RP", color: .yellow) {
+                                attack()
+                            }
+                            ArcadeActionButton(title: "LK", color: .red) {
+                                attack()
+                            }
+                            ArcadeActionButton(title: "RK", color: .green) {
+                                attack()
+                            }
+                            ArcadeActionButton(title: "LP", color: .orange) {
+                                attack()
+                            }
+                            ArcadeActionButton(title: "RP", color: .indigo) {
+                                attack()
+                            }
+                        }
+                    }
+                    .padding()
+                }
+            }
+
+            if showArcadeSelect {
                 Color.black.opacity(0.85).ignoresSafeArea()
 
                 VStack(spacing: 18) {
-                    Text("Event Mode")
+                    Text("ARCADE MODE")
                         .font(.largeTitle.bold())
                         .foregroundColor(.white)
 
-                    ForEach(Array(events.enumerated()), id: \.offset) { pair in
+                    ForEach(Array(waves.enumerated()), id: \.offset) { pair in
                         let index = pair.offset
-                        let event = pair.element
+                        let wave = pair.element
+
                         Button {
-                            startEvent(index)
+                            startArcade(index)
                         } label: {
-                            Text(event.title)
+                            Text(wave.title)
                                 .font(.title2.bold())
                                 .frame(maxWidth: .infinity)
                                 .padding()
@@ -158,83 +233,45 @@ struct EventView: View {
                 )
                 .padding(.horizontal, 24)
             }
-
-            if levelCleared {
-                Text("LEVEL CLEARED")
-                    .font(.largeTitle.bold())
-                    .foregroundColor(.yellow)
-            }
-
-            // 🎰 ARCADE FOOTER (nur im Kampf sichtbar)
-            if !showEventSelect {
-                VStack {
-                    Spacer()
-                    HStack(spacing: 24) {
-                        ActionButton(
-                            title: "ATTACK",
-                            energy: .fire,
-                            action: attack
-                        )
-                        .frame(maxWidth: .infinity)
-                        ActionButton(
-                            title: "SWITCH",
-                            energy: .ice,
-                            action: switchPlayer
-                        )
-                        .frame(maxWidth: .infinity)
-                    }
-                    .padding()
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 26)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [
-                                        Color(hex: theme.metal.highlight),
-                                        Color(hex: theme.metal.edgeGlow),
-                                        Color(hex: theme.metal.shadow),
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 2
-                            )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 26))
-                    .padding()
-                }
-            }
         }
         .onAppear(perform: loadGame)
     }
 
+    func updateStickPower(_ power: CGFloat) {
+        stickPower = power
+
+        if power == 0 {
+            fireTimer?.invalidate()
+            fireTimer = nil
+            return
+        }
+
+        if fireTimer == nil {
+            fireTimer = Timer.scheduledTimer(
+                withTimeInterval: max(0.05, 0.35 - power * 0.3),
+                repeats: true
+            ) { _ in
+                attack()
+            }
+        }
+    }
+
     // MARK: Game Logic
     func loadGame() {
-
         roster = PlayerRosterLoader.load()
-        events = EventLoader.load()
-
         playerIndex = 0
         enemyIndex = 0
         playerExp = 0
         levelCleared = false
 
-        if let firstEvent = events.first {
-            enemies = EnemyWaveLoader.load(file: firstEvent.enemyFile)
-            enemyHP = enemies.first?.maxHP ?? 0
-        } else {
-            enemies = []
-            enemyHP = 0
-            levelCleared = true
-            showEventSelect = true
-        }
+        roundIndex = 0
+        enemies = waves[waveIndex].rounds[roundIndex]
+        enemyHP = enemies.first?.maxHP ?? 0
     }
 
-    func startEvent(_ index: Int) {
-        showEventSelect = false
-        currentEventIndex = index
-
-        let event = events[index]
-        enemies = EnemyWaveLoader.load(file: event.enemyFile)
+    func startArcade(_ index: Int) {
+        showArcadeSelect = false
+        waveIndex = index
         enemyIndex = 0
         enemyHP = enemies.first?.maxHP ?? 0
         levelCleared = false
@@ -259,7 +296,6 @@ struct EventView: View {
     }
 
     func nextEnemy() {
-
         playerExp = min(playerExp + 25, 100)
 
         let nextEnemyIndex = enemyIndex + 1
@@ -269,25 +305,34 @@ struct EventView: View {
             return
         }
 
-        // Event vorbei → nächstes Event laden
-        let nextEventIndex = currentEventIndex + 1
-        if events.indices.contains(nextEventIndex) {
-            currentEventIndex = nextEventIndex
-            let event = events[currentEventIndex]
-
-            enemies = EnemyWaveLoader.load(file: event.enemyFile)
-            enemyIndex = 0
-            enemyHP = enemies.first?.maxHP ?? 0
+        // ROUND CLEARED
+        if waves[waveIndex].rounds.indices.contains(roundIndex + 1) {
+            withAnimation { showRoundClear = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                showRoundClear = false
+                roundIndex += 1
+                enemies = waves[waveIndex].rounds[roundIndex]
+                enemyIndex = 0
+                enemyHP = enemies.first?.maxHP ?? 0
+            }
             return
         }
 
-        levelCleared = true
-        showEventSelect = true
+        // WAVE CLEARED
+        withAnimation { showWaveClear = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+            showWaveClear = false
+            waveIndex = (waveIndex + 1) % waves.count
+            roundIndex = 0
+            enemies = waves[waveIndex].rounds[roundIndex]
+            enemyIndex = 0
+            enemyHP = enemies.first?.maxHP ?? 0
+        }
     }
 }
 
 #Preview {
-    EventView()
+    ArcadeView()
         .environmentObject(
             ThemeManager(theme: ThemeLoader.load())
         )
