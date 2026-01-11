@@ -1,0 +1,90 @@
+{
+    "name": "TEKRA SILVER CORE – CHROME EDITION",
+
+    "background": {
+        "top": "#FFFFFF",
+        "bottom": "#C7C9CE",
+        "chromeGradient": [
+            "#2F3034",
+            "#8D858C",
+            "#E6E7EA",
+            "#8D858C",
+            "#5F5E63"
+        ]
+    },
+
+    "metal": {
+        "highlight": "#E6E7EA",
+        "light": "#C7C9CE",
+        "base": "#8D858C",
+        "dark": "#5F5E63",
+        "shadow": "#2F3034",
+
+        "chromeGradient": [
+            "#2F3034",
+            "#8D858C",
+            "#E6E7EA",
+            "#8D858C",
+            "#5F5E63"
+        ],
+
+        "bevelShadow": "#1B1C1F",
+        "edgeGlow": "#F6F8FB"
+    },
+
+    "energy": {
+        "ice": {
+            "core": "#4DDCFF",
+            "glow": "#9CF1FF",
+            "spark": "#E8FBFF"
+        },
+        "fire": {
+            "core": "#FF4A1A",
+            "glow": "#FF8A5A",
+            "spark": "#FFD6C9"
+        }
+    },
+
+    "warning": "#FFB000",
+
+    "text": {
+        "primary": "#1A1A1A",
+        "secondary": "#4A4A4A",
+        "highlight": "#F6F8FB",
+        "chromeGradient": [
+            "#2F3034",
+            "#8D858C",
+            "#E6E7EA",
+            "#8D858C",
+            "#5F5E63"
+        ]
+    },
+
+    "hud": {
+        "hp": {
+            "core": "#FF4A1A",
+            "glow": "#FF8A5A"
+        },
+        "exp": {
+            "core": "#4DDCFF",
+            "glow": "#9CF1FF"
+        },
+        "border": "#E6E7EA",
+        "borderShadow": "#2F3034"
+    },
+
+    "buttons": {
+        "primaryGlow": "#E6E7EA",
+        "dangerGlow": "#FF4A1A",
+        "chromeEdge": "#F6F8FB",
+        "chromeShadow": "#2F3034"
+    },
+
+    "fx": {
+        "glowIntensity": 1.25,
+        "metalShine": 1.4,
+        "reflectionStrength": 0.9
+    },
+
+    "cornerRadius": 22
+}

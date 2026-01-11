@@ -1,0 +1,16 @@
+[
+    {
+        "id": 1,
+        "name": "Sly",
+        "image": "sly",
+        "maxHP": 100,
+        "attack": 10
+    },
+    {
+        "id": 2,
+        "name": "Axel Blaze",
+        "image": "axel_blaze",
+        "maxHP": 120,
+        "attack": 12
+    }
+]
