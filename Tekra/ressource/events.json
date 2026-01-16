@@ -1,23 +1,25 @@
-[
-    {
-        "id": 1,
-        "title": "Street Riot",
-        "description": "A gang blocks your way. Fight through them!",
-        "enemyFile": "enemy",
-        "rewardExp": 50
-    },
-    {
-        "id": 2,
-        "title": "Shadow Dojo",
-        "description": "Ninjas attack from the rooftops.",
-        "enemyFile": "enemy",
-        "rewardExp": 80
-    },
-    {
-        "id": 3,
-        "title": "Inferno Lair",
-        "description": "The Inferno Lord awaits you.",
-        "enemyFile": "enemy",
-        "rewardExp": 150
-    }
-]
+{
+    "events": [
+        {
+            "id": "ice_challenge",
+            "title": "Frozen Front",
+            "description": "Defeat the guardians of the ice sector.",
+            "background": "skybox",
+            "enemies": [
+                "ice_warrior"
+            ],
+            "rewards": [
+                {
+                    "type": "xp",
+                    "amount": 250
+                },
+                {
+                    "type": "coins",
+                    "amount": 100
+                }
+            ],
+            "requiredLevel": 1,
+            "active": true
+        }
+    ]
+}

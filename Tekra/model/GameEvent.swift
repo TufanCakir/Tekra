@@ -2,30 +2,41 @@
 //  GameEvent.swift
 //  Tekra
 //
-//  Created by Tufan Cakir on 11.01.26.
+//  Created by Tufan Cakir on 16.01.26.
 //
-
 import Foundation
 
-struct GameEvent: Codable, Identifiable {
-    let id: Int
+struct GameEvent: Identifiable, Codable {
+    let id: String
     let title: String
     let description: String
-    let enemyFile: String  // z.B. "enemy_boss", "enemy_ninja"
-    let rewardExp: Int
+    let background: String
+    let enemies: [String]
+    let rewards: [EventReward]
+    let requiredLevel: Int
+    let active: Bool
+
+    // HELPER: Extrahiert XP aus der rewards-Liste
+    var rewardXP: Int {
+        rewards.first(where: { $0.type == .xp })?.amount ?? 0
+    }
+
+    // HELPER: Falls du Coins hinzufügen möchtest (ergänze .coins im enum unten)
+    var rewardCoins: Int {
+        rewards.first(where: { $0.type == .coins })?.amount ?? 0
+    }
 }
 
-class EventLoader {
-    static func load() -> [GameEvent] {
-        guard
-            let url = Bundle.main.url(
-                forResource: "events",
-                withExtension: "json"
-            ),
-            let data = try? Data(contentsOf: url),
-            let events = try? JSONDecoder().decode([GameEvent].self, from: data)
-        else { return [] }
+struct EventReward: Codable {
+    let type: RewardType
+    let amount: Int?
+    let idRef: String?
 
-        return events
+    enum RewardType: String, Codable {
+        case xp, card, theme, coins  // 'coins' hinzugefügt für das Layout
     }
+}
+
+struct EventResponse: Codable {
+    let events: [GameEvent]
 }

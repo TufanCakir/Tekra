@@ -5,11 +5,13 @@
 //  Created by Tufan Cakir on 11.01.26.
 //
 
+import SwiftData
 import SwiftUI
 
 struct HomeView: View {
-    @EnvironmentObject var themeManager: ThemeManager
-    var theme: Theme { themeManager.current }
+    @Environment(GameEngine.self) private var engine
+    @Environment(\.dismiss) private var dismiss
+
     @State private var logoScale = 0.8
     @State private var logoOpacity = 0.0
     @State private var logoOffsetX: CGFloat = -400  // startet außerhalb links
@@ -17,7 +19,7 @@ struct HomeView: View {
     var body: some View {
 
         ZStack {
-            theme.chromeGradient()
+            ThemeLoader.load(id: engine.activeThemeID).chromeGradient()
                 .ignoresSafeArea()
 
             VStack(spacing: 24) {
@@ -46,12 +48,8 @@ struct HomeView: View {
                 // MAIN MENU
                 VStack(spacing: 20) {
 
-                    NavigationLink(destination: GameView()) {
+                    NavigationLink(destination: ArcadeView()) {
                         MenuButton(title: "Start Game", icon: "bolt")
-                    }
-
-                    NavigationLink(destination: StoryView()) {
-                        MenuButton(title: "Story", icon: "book")
                     }
 
                     NavigationLink(destination: ArcadeView()) {
@@ -61,7 +59,7 @@ struct HomeView: View {
                         )
                     }
 
-                    NavigationLink(destination: EventView()) {
+                    NavigationLink(destination: EventListView()) {
                         MenuButton(title: "Event", icon: "gamecontroller")
                     }
 
@@ -76,10 +74,17 @@ struct HomeView: View {
 }
 
 #Preview {
-    NavigationStack {
-        HomeView()
-            .environmentObject(
-                ThemeManager(theme: ThemeLoader.load())
-            )
-    }
+    // VOR dem Preview die Daten laden!
+    FighterRegistry.loadAll()
+
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(
+        for: PlayerProgress.self,
+        configurations: config
+    )
+    let engine = GameEngine()
+
+    return HomeView()
+        .environment(engine)
+        .modelContainer(container)
 }

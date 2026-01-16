@@ -1,16 +1,16 @@
 [
     {
-        "id": 1,
+        "id": "tekra_core",
         "name": "Sly",
-        "image": "sly",
+        "imageName": "sly",
         "maxHP": 100,
-        "attack": 10
+        "attackPower": 15
     },
     {
-        "id": 2,
-        "name": "Axel Blaze",
-        "image": "axel_blaze",
-        "maxHP": 120,
-        "attack": 12
+        "id": "neon_striker",
+        "name": "ice_warrior",
+        "imageName": "ice_warrior",
+        "maxHP": 80,
+        "attackPower": 25
     }
 ]

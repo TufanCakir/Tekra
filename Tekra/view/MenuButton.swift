@@ -5,15 +5,18 @@
 //  Created by Tufan Cakir on 11.01.26.
 //
 
+import SwiftData
 import SwiftUI
 
 struct MenuButton: View {
+    @Environment(GameEngine.self) private var engine
 
-    @EnvironmentObject var themeManager: ThemeManager
     let title: String
     let icon: String
 
-    var theme: Theme { themeManager.current }
+    private var theme: Theme {
+        ThemeLoader.load(id: engine.activeThemeID)
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -39,7 +42,7 @@ struct MenuButton: View {
 
     // MARK: - Chrome Layers
 
-    var chromePlate: some View {
+    private var chromePlate: some View {
         ZStack {
             theme.chromeGradient()
             LinearGradient(
@@ -54,7 +57,7 @@ struct MenuButton: View {
         }
     }
 
-    var chromeEdge: some View {
+    private var chromeEdge: some View {
         RoundedRectangle(cornerRadius: theme.cornerRadius)
             .stroke(
                 LinearGradient(
@@ -71,9 +74,16 @@ struct MenuButton: View {
     }
 }
 
+// MARK: - Preview Fix
 #Preview {
-    MenuButton(title: "testssdasydsadadadsad", icon: "")
-        .environmentObject(
-            ThemeManager(theme: ThemeLoader.load())
-        )
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(
+        for: PlayerProgress.self,
+        configurations: config
+    )
+    let engine = GameEngine()
+
+    MenuButton(title: "", icon: "")
+        .environment(engine)
+        .modelContainer(container)
 }

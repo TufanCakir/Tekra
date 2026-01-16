@@ -1,23 +1,23 @@
 //
-//  ArcadeView.swift
+//  RaidView.swift
 //  Tekra
 //
-//  Created by Tufan Cakir on 11.01.26.
+//  Created by Tufan Cakir on 16.01.26.
 //
 
 import SwiftData
 import SwiftUI
 
-struct ArcadeView: View {
+struct RaidView: View {
     @Environment(GameEngine.self) private var engine
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query private var allProgress: [PlayerProgress]
 
-    @State private var selectedWave: ArcadeWave?
-    @State private var showingWaveSelection = false
+    @State private var selectedBoss: RaidBoss?
+    @State private var showingBossSelection = false
 
-    // Grid-Konfiguration für 2 Spalten
+    // Grid-Konfiguration für 2 Spalten (Identisch mit ArcadeView)
     private let columns = [
         GridItem(.flexible(), spacing: 20),
         GridItem(.flexible(), spacing: 20),
@@ -29,12 +29,17 @@ struct ArcadeView: View {
         ZStack {
             Color(hex: theme?.background.bottom ?? "#000000").ignoresSafeArea()
 
-            if selectedWave != nil {
+            if selectedBoss != nil {
                 // MARK: - 3. KAMPF MODUS
                 VStack(spacing: 0) {
-                    BattleArenaView(engine: engine)
+                    BattleArenaView(engine: engine, showDefaultHUD: false)
                         .ignoresSafeArea()
-                    arcadeControlPanel(theme: theme)
+
+                    VStack {
+                        bossHealthHeader(theme: theme)
+                        Spacer()
+                        raidControlPanel(theme: theme)
+                    }
                 }
                 .transition(
                     .asymmetric(
@@ -44,12 +49,12 @@ struct ArcadeView: View {
                 )
 
                 if engine.isLevelCleared {
-                    levelClearedOverlay(theme: theme)
+                    raidVictoryOverlay(theme: theme)
                 }
 
-            } else if showingWaveSelection {
-                // MARK: - 2. WELLEN AUSWAHL
-                waveSelectionMenu(theme: theme)
+            } else if showingBossSelection {
+                // MARK: - 2. BOSS AUSWAHL
+                bossSelectionMenu(theme: theme)
                     .transition(
                         .asymmetric(
                             insertion: .move(edge: .trailing),
@@ -57,28 +62,29 @@ struct ArcadeView: View {
                         )
                     )
             } else {
-                // MARK: - 1. CHARAKTER AUSWAHL (Grid)
+                // MARK: - 1. CHARAKTER AUSWAHL (Rundes Grid)
                 characterSelectionGrid(theme: theme)
                     .transition(.move(edge: .leading))
             }
         }
+        .navigationBarHidden(true)
         .onAppear { setupDatabase() }
     }
 
-    // MARK: - Character Grid UI
+    // MARK: - 1. Character Selection (Rundes Grid Layout)
     private func characterSelectionGrid(theme: Theme?) -> some View {
-        let accentColor = Color(hex: theme?.energy.ice.core ?? "#00FFFF")
+        let accentColor = Color.red  // Raid-spezifisches Rot
 
         return VStack(spacing: 0) {
             headerView(
-                title: "SELECT PILOT",
-                subtitle: "CHOOSE YOUR UNIT",
-                theme: theme
+                title: "RAID PREPARATION",
+                subtitle: "SELECT YOUR PILOT",
+                theme: theme,
+                color: accentColor
             )
             .padding(.bottom, 20)
 
             ScrollView {
-
                 LazyVGrid(columns: columns, spacing: 30) {
                     ForEach(FighterRegistry.playableCharacters) { character in
                         let isSelected =
@@ -92,7 +98,7 @@ struct ArcadeView: View {
                             }
                         }) {
                             VStack(spacing: 12) {
-                                // RUNDES ICON
+                                // RUNDES ICON (Wie in ArcadeView)
                                 ZStack {
                                     Circle()
                                         .stroke(
@@ -117,9 +123,10 @@ struct ArcadeView: View {
                                         )
                                         .scaledToFill()
                                         .background(Color.black.opacity(0.4))
+                                        .clipShape(Circle())
                                 }
 
-                                // NAME & MINI STATS
+                                // NAME & MINI STATS (Kapsel-Design)
                                 VStack(spacing: 4) {
                                     Text(character.name.uppercased())
                                         .font(
@@ -161,7 +168,7 @@ struct ArcadeView: View {
             // Bestätigungs-Button unten fixiert
             if engine.currentPlayer != nil {
                 Button(action: {
-                    withAnimation(.spring()) { showingWaveSelection = true }
+                    withAnimation(.spring()) { showingBossSelection = true }
                 }) {
                     Text("CONFIRM PILOT")
                         .font(
@@ -171,7 +178,7 @@ struct ArcadeView: View {
                                 design: .monospaced
                             )
                         )
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(accentColor)
@@ -183,38 +190,46 @@ struct ArcadeView: View {
         }
     }
 
-    // MARK: - Wave Selection UI
-    private func waveSelectionMenu(theme: Theme?) -> some View {
+    // MARK: - 2. Boss Selection
+    private func bossSelectionMenu(theme: Theme?) -> some View {
         ScrollView {
             VStack(spacing: 20) {
                 headerView(
-                    title: "ARCADE MODE",
-                    subtitle: "SELECT MISSION SECTOR",
-                    theme: theme
+                    title: "TARGET ACQUISITION",
+                    subtitle: "SELECT RAID BOSS",
+                    theme: theme,
+                    color: .red
                 )
 
-                ForEach(FighterRegistry.currentArcadeWaves) { wave in
+                ForEach(Array(FighterRegistry.currentRaidBosses.values)) {
+                    boss in
                     Button(action: {
-                        engine.startArcade(wave: wave)
-                        withAnimation { selectedWave = wave }
+                        engine.startRaid(bossID: boss.id)
+                        withAnimation { selectedBoss = boss }
                     }) {
-                        HStack {
+                        HStack(spacing: 20) {
+                            Image(boss.imageName)
+                                .resizable().scaledToFill().frame(
+                                    width: 60,
+                                    height: 60
+                                )
+                                .background(Circle().fill(.black.opacity(0.3)))
+                                .clipShape(Circle())
+
                             VStack(alignment: .leading) {
-                                Text(wave.title.uppercased()).font(
+                                Text(boss.name.uppercased()).font(
                                     .system(
                                         size: 18,
                                         weight: .black,
                                         design: .monospaced
                                     )
                                 ).foregroundColor(.white)
-                                Text("\(wave.rounds.count) STAGES").font(
-                                    .caption
-                                ).foregroundColor(.gray)
+                                Text("CLASS: TITAN | HP: \(Int(boss.maxHP))")
+                                    .font(.caption).foregroundColor(.red)
                             }
                             Spacer()
-                            Image(systemName: "chevron.right").foregroundColor(
-                                Color(hex: theme?.energy.ice.core ?? "#4DDCFF")
-                            )
+                            Image(systemName: "bolt.shield.fill")
+                                .foregroundColor(.red)
                         }
                         .padding(20)
                         .background(
@@ -226,37 +241,78 @@ struct ArcadeView: View {
                 }
 
                 Button("CHANGE PILOT") {
-                    withAnimation { showingWaveSelection = false }
+                    withAnimation { showingBossSelection = false }
                 }
                 .font(.system(size: 12, weight: .bold, design: .monospaced))
-                .foregroundColor(.gray)
-                .padding(.top, 10)
+                .foregroundColor(.gray).padding(.top, 10)
             }
             .padding()
         }
     }
 
-    // MARK: - Helper Views & Components
-    private func headerView(title: String, subtitle: String, theme: Theme?)
-        -> some View
-    {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(title).font(
-                .system(size: 14, weight: .bold, design: .monospaced)
-            ).foregroundColor(Color(hex: theme?.energy.ice.core ?? "#4DDCFF"))
-            Text(subtitle).font(
-                .system(size: 26, weight: .black, design: .monospaced)
-            ).foregroundColor(.white)
+    // MARK: - HUD & Overlays
+    private func bossHealthHeader(theme: Theme?) -> some View {
+        GeometryReader { geo in
+            let totalWidth = geo.size.width * 0.85
+            let currentHP = engine.enemyHP
+            let maxHP = max(engine.currentEnemy?.maxHP ?? 1, 1)
+            let ratio = max(0, min(1, currentHP / maxHP))
+            let barWidth = totalWidth * ratio
+
+            VStack(spacing: 8) {
+                HStack {
+                    Text(engine.currentEnemy?.name.uppercased() ?? "BOSS")
+                        .font(
+                            .system(
+                                size: 20,
+                                weight: .black,
+                                design: .monospaced
+                            )
+                        )
+                        .foregroundColor(.white)
+                        .italic()
+                    Spacer()
+                    Text("\(Int(engine.enemyHP)) HP")
+                        .font(
+                            .system(
+                                size: 14,
+                                weight: .bold,
+                                design: .monospaced
+                            )
+                        )
+                        .foregroundColor(.red)
+                }
+                .padding(.horizontal, 40)
+                .padding(.top, 50)
+
+                ZStack(alignment: .leading) {
+                    Rectangle()
+                        .fill(Color.black.opacity(0.6))
+                        .frame(height: 12)
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                colors: [.red, .orange],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: barWidth, height: 12)
+                }
+                .frame(width: totalWidth)
+                .overlay(
+                    Rectangle()
+                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                )
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 25)
-        .padding(.top, 40)
+        .frame(height: 100)
     }
 
-    private func arcadeControlPanel(theme: Theme?) -> some View {
+    private func raidControlPanel(theme: Theme?) -> some View {
         VStack(spacing: 0) {
-            Color(hex: theme?.metal.edgeGlow ?? "#FFFFFF").frame(height: 2)
-                .opacity(0.3)
+            Color.red.frame(height: 2).opacity(0.3)
             HStack(spacing: 15) {
                 ForEach(engine.hand) { card in
                     ArcadeCardButton(card: card) { engine.playCard(card) }
@@ -265,50 +321,42 @@ struct ArcadeView: View {
         }
     }
 
-    private func levelClearedOverlay(theme: Theme?) -> some View {
+    private func raidVictoryOverlay(theme: Theme?) -> some View {
         ZStack {
             Color.black.opacity(0.9).ignoresSafeArea()
             VStack(spacing: 30) {
-                Text("MISSION SUCCESS").font(
+                Text("RAID COMPLETED").font(
                     .system(size: 32, weight: .black, design: .monospaced)
                 ).foregroundColor(.yellow).italic()
-                HStack(spacing: 40) {
-                    RewardView(
-                        label: "XP",
-                        value: "+75",
-                        color: Color(hex: theme?.energy.ice.core ?? "#4DDCFF")
-                    )
-                    RewardView(label: "COINS", value: "+20", color: .orange)
-                }
-                .padding(25).background(Color.white.opacity(0.05)).cornerRadius(
-                    20
-                )
-
-                Button(action: {
-                    withAnimation {
-                        if engine.currentRoundIndex
-                            >= (engine.currentWave?.rounds.count ?? 0) - 1
-                        {
-                            selectedWave = nil
-                            engine.isLevelCleared = false
-                        } else {
-                            engine.nextArcadeRound()
-                        }
-                    }
-                }) {
-                    Text(
-                        engine.currentRoundIndex
-                            >= (engine.currentWave?.rounds.count ?? 0) - 1
-                            ? "RETURN TO BASE" : "PROCEED"
-                    )
-                    .font(.system(size: 20, weight: .bold, design: .monospaced))
-                    .foregroundColor(.black).padding(.horizontal, 50).padding(
-                        .vertical,
-                        15
-                    ).background(Color.green).cornerRadius(12)
-                }
+                RewardView(label: "BOSS LOOT", value: "+500 XP", color: .red)
+                Button("RETURN TO HUB") { dismiss() }.font(
+                    .system(size: 20, weight: .bold, design: .monospaced)
+                ).foregroundColor(.black).padding(.horizontal, 50).padding(
+                    .vertical,
+                    15
+                ).background(Color.green).cornerRadius(12)
             }
         }
+    }
+
+    private func headerView(
+        title: String,
+        subtitle: String,
+        theme: Theme?,
+        color: Color
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title).font(
+                .system(size: 14, weight: .bold, design: .monospaced)
+            ).foregroundColor(color)
+            Text(subtitle).font(
+                .system(size: 26, weight: .black, design: .monospaced)
+            ).foregroundColor(.white)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading).padding(
+            .horizontal,
+            25
+        ).padding(.top, 40)
     }
 
     private func setupDatabase() {
@@ -321,46 +369,13 @@ struct ArcadeView: View {
     }
 }
 
-// MARK: - Sub-Components
-struct StatMiniView: View {
-    let icon: String
-    let value: String
-    let color: Color
-    var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon).font(.system(size: 10))
-            Text(value).font(
-                .system(size: 12, weight: .bold, design: .monospaced)
-            )
-        }.foregroundColor(color).padding(.horizontal, 8).padding(.vertical, 4)
-            .background(Color.black.opacity(0.3)).cornerRadius(5)
-    }
-}
-
-struct RewardView: View {
-    let label: String
-    let value: String
-    let color: Color
-    var body: some View {
-        VStack {
-            Text(label).font(.caption).foregroundColor(.gray)
-            Text(value).font(.title).bold().foregroundColor(color)
-        }
-    }
-}
-
 #Preview {
-    // VOR dem Preview die Daten laden!
     FighterRegistry.loadAll()
-
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(
         for: PlayerProgress.self,
         configurations: config
     )
     let engine = GameEngine()
-
-    return ArcadeView()
-        .environment(engine)
-        .modelContainer(container)
+    return RaidView().environment(engine).modelContainer(container)
 }
