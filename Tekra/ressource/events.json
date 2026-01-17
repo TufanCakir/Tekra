@@ -3,10 +3,11 @@
         {
             "id": "ice_challenge",
             "title": "Frozen Front",
-            "description": "Defeat the guardians of the ice sector.",
+            "description":
+                "Cryogenic defenses are active. Break through the frozen front and defeat the ice sector guardians.",
             "background": "skybox",
             "enemies": [
-                "ice_warrior"
+                "story_frozen_king"
             ],
             "rewards": [
                 {

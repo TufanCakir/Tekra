@@ -2,56 +2,81 @@
 //  EventListView.swift
 //  Tekra
 //
-//  Created by Tufan Cakir on 16.01.26.
+//  Created by Tufan Cakir on 17.01.26.
 //
 
-import SwiftData
 import SwiftUI
 
 struct EventListView: View {
     @Environment(GameEngine.self) private var engine
-    @State private var availableEvents: [GameEvent] = []
+    @State private var events: [GameEvent] = []
     @State private var selectedEvent: GameEvent?
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack {
-                    ForEach(availableEvents.filter { $0.active }) { event in
-                        EventCard(event: event) {
-                            // Hier den Namen anpassen:
-                            engine.loadEvent(event)
-                            selectedEvent = event
+        ZStack {
+            // MARK: - Background
+            LinearGradient(
+                colors: [.black, Color.black.opacity(0.85)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 28) {
+
+                    // MARK: - Header
+                    header
+
+                    // MARK: - Events
+                    VStack(spacing: 18) {
+                        ForEach(events.filter { $0.active }) { event in
+                            EventCard(event: event) {
+                                withAnimation(.easeOut(duration: 0.2)) {
+                                    selectedEvent = event
+                                }
+                            }
+                            .transition(
+                                .opacity.combined(with: .move(edge: .bottom))
+                            )
                         }
                     }
+
+                    Spacer(minLength: 40)
                 }
-                .padding()
-            }
-            .navigationTitle("WORLD EVENTS")
-            .fullScreenCover(item: $selectedEvent) { event in
-                EventBattleView(event: event)  // Hier das Event übergeben
-                    .environment(engine)
-            }
-            .onAppear {
-                // Lade Events aus menu.json oder events.json
-                self.availableEvents = EventLoader.load()
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
             }
         }
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            events = EventLoader.load()
+        }
+        .navigationDestination(item: $selectedEvent) { event in
+            EventBattleView(event: event)
+        }
     }
-}
 
-#Preview {
-    // 1. Erstelle eine Instanz der Engine für die Vorschau
-    let previewEngine = GameEngine()
+    // MARK: - Header View
+    private var header: some View {
+        VStack(spacing: 10) {
 
-    // 2. Erstelle einen Container für SwiftData (falls benötigt)
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(
-        for: PlayerProgress.self,
-        configurations: config
-    )
+            Text("WORLD EVENTS")
+                .font(.system(size: 30, weight: .black, design: .monospaced))
+                .foregroundColor(.white)
 
-    return EventListView()
-        .environment(previewEngine)  // Hier wird die Engine injiziert
-        .modelContainer(container)
+            Text("LIMITED OPERATIONS")
+                .font(.caption.bold())
+                .foregroundColor(.purple)
+
+            Text(
+                "Special missions with unique rewards.\nAvailable for a limited time."
+            )
+            .font(.caption)
+            .foregroundColor(.gray)
+            .multilineTextAlignment(.center)
+            .padding(.top, 4)
+        }
+        .padding(.top, 24)
+    }
 }

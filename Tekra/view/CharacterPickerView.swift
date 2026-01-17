@@ -10,10 +10,9 @@ import SwiftUI
 struct CharacterPickerView: View {
     @Environment(GameEngine.self) private var engine
 
-    // Grid-Layout: 2 Spalten, die sich flexibel anpassen
     private let columns = [
-        GridItem(.flexible(), spacing: 20),
-        GridItem(.flexible(), spacing: 20),
+        GridItem(.flexible(), spacing: 18),
+        GridItem(.flexible(), spacing: 18),
     ]
 
     var body: some View {
@@ -21,96 +20,114 @@ struct CharacterPickerView: View {
         let accentColor = Color(hex: theme?.energy.ice.core ?? "#00FFFF")
 
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 25) {
-                ForEach(FighterRegistry.playableCharacters) { hero in
-                    let isSelected = engine.currentPlayer?.id == hero.id
+            LazyVGrid(columns: columns, spacing: 22) {
 
-                    Button(action: {
+                ForEach(FighterRegistry.playableCharacters) { hero in
+                    let isUnlocked =
+                        engine.progress?.isCharacterUnlocked(hero.id) ?? false
+                    let isSelected =
+                        engine.currentPlayer?.id == hero.id
+
+                    Button {
+                        guard isUnlocked else { return }
                         withAnimation(
-                            .spring(response: 0.3, dampingFraction: 0.7)
+                            .spring(response: 0.35, dampingFraction: 0.75)
                         ) {
                             engine.selectPlayer(hero)
                         }
-                    }) {
-                        VStack(spacing: 12) {
-                            // RUNDES ICON MIT GLOW
+                    } label: {
+                        VStack(spacing: 14) {
+
+                            // MARK: - Portrait
                             ZStack {
-                                // Äußerer Ring (nur wenn ausgewählt)
                                 Circle()
-                                    .stroke(
-                                        isSelected
-                                            ? accentColor
-                                            : Color.white.opacity(0.1),
-                                        lineWidth: 3
-                                    )
-                                    .frame(width: 110, height: 110)
+                                    .fill(Color.black.opacity(0.4))
+                                    .frame(width: 96, height: 96)
 
-                                // Hintergrund Glow
-                                if isSelected {
-                                    Circle()
-                                        .fill(accentColor.opacity(0.2))
-                                        .frame(width: 100, height: 100)
-                                        .blur(radius: 15)
-                                }
-
-                                // Das eigentliche Bild (Beschnitten auf Kreis)
                                 Image(hero.imageName)
                                     .resizable()
-                                    .scaledToFill()  // Wichtig für Rundung
-                                    .frame(width: 50, height: 50)
-                                    .background(Color.black.opacity(0.3))
+                                    .scaledToFit()
+                                    .frame(width: 72, height: 72)
+                                    .opacity(isUnlocked ? 1 : 0.25)
 
-                            }
-
-                            // NAME & STATS
-                            VStack(spacing: 4) {
-                                Text(hero.name.uppercased())
-                                    .font(
-                                        .system(
-                                            size: 14,
-                                            weight: .black,
-                                            design: .monospaced
+                                if isSelected {
+                                    Circle()
+                                        .stroke(accentColor, lineWidth: 3)
+                                        .frame(width: 96, height: 96)
+                                        .shadow(
+                                            color: accentColor.opacity(0.8),
+                                            radius: 12
                                         )
-                                    )
-                                    .foregroundColor(
-                                        isSelected ? .white : .gray
-                                    )
-                                    .lineLimit(1)
+                                }
 
-                                // Kleine runde Stat-Pille
-                                HStack(spacing: 8) {
-                                    HStack(spacing: 2) {
-                                        Image(systemName: "bolt.fill")
-                                        Text("\(Int(hero.attackPower))")
+                                if !isUnlocked {
+                                    VStack(spacing: 6) {
+                                        Image(systemName: "lock.fill")
+                                        Text("LOCKED")
+                                            .font(.caption.bold())
                                     }
-                                    .font(.system(size: 10, weight: .bold))
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(
-                                        isSelected
-                                            ? accentColor.opacity(0.2)
-                                            : Color.white.opacity(0.05)
-                                    )
-                                    .foregroundColor(
-                                        isSelected ? accentColor : .gray
-                                    )
-                                    .clipShape(Capsule())
+                                    .foregroundColor(.gray)
                                 }
                             }
+
+                            // MARK: - Name
+                            Text(hero.name.uppercased())
+                                .font(
+                                    .system(
+                                        size: 14,
+                                        weight: .black,
+                                        design: .monospaced
+                                    )
+                                )
+                                .foregroundColor(
+                                    isUnlocked ? .white : .gray
+                                )
+                                .lineLimit(1)
+
+                            // MARK: - Stats
+                            HStack(spacing: 6) {
+                                Image(systemName: "bolt.fill")
+                                Text("\(Int(hero.attackPower)) ATK")
+                            }
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(
+                                isUnlocked ? accentColor : .gray
+                            )
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule()
+                                    .fill(
+                                        isUnlocked
+                                            ? accentColor.opacity(0.18)
+                                            : Color.white.opacity(0.06)
+                                    )
+                            )
                         }
-                        .padding(.vertical, 15)
+                        .padding(.vertical, 16)
                         .frame(maxWidth: .infinity)
-                        // Hintergrund-Kapsel für das gesamte Item
                         .background(
-                            Capsule()
+                            RoundedRectangle(cornerRadius: 20)
                                 .fill(
                                     isSelected
                                         ? Color.white.opacity(0.08)
-                                        : Color.clear
+                                        : Color.black.opacity(0.3)
                                 )
                         )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(
+                                    isSelected
+                                        ? accentColor.opacity(0.6)
+                                        : Color.white.opacity(0.08),
+                                    lineWidth: 1
+                                )
+                        )
+                        .scaleEffect(isSelected ? 1.03 : 1.0)
+                        .opacity(isUnlocked ? 1 : 0.45)
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .buttonStyle(.plain)
+                    .disabled(!isUnlocked)
                 }
             }
             .padding(20)

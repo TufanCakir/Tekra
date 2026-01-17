@@ -13,81 +13,101 @@ struct ArcadeCardButton: View {
     let action: () -> Void
 
     var body: some View {
-        // Der Zugriff auf lastUIUpdateTime zwingt SwiftUI zum Redraw bei jedem Frame
+        // Erzwingt Redraw für Cooldown
         let _ = engine.lastUIUpdateTime
         let isReady = engine.isCardReady(card)
         let progress = engine.cooldownProgress(for: card)
 
         ZStack {
-            // 1. Hintergrund & Schatten-Glow wenn bereit
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.black.opacity(0.8))
+
+            // =========================
+            // BASE CARD
+            // =========================
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color.black.opacity(0.88))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(
+                            isReady
+                                ? card.uiColor.opacity(0.9)
+                                : Color.white.opacity(0.15),
+                            lineWidth: 2
+                        )
+                )
                 .shadow(
-                    color: isReady ? card.uiColor.opacity(0.5) : .clear,
-                    radius: 10
+                    color: isReady
+                        ? card.uiColor.opacity(0.5)
+                        : .black.opacity(0.6),
+                    radius: 12,
+                    y: 6
                 )
 
-            // 2. Cooldown-Füllung (von unten nach oben)
+            // =========================
+            // COOLDOWN OVERLAY
+            // =========================
             if !isReady {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(card.uiColor.opacity(0.3))
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(card.uiColor.opacity(0.35))
                     .mask(
                         GeometryReader { geo in
-                            VStack {
-                                Spacer(minLength: 0)
+                            VStack(spacing: 0) {
                                 Rectangle()
-                                    .frame(height: geo.size.height * progress)
+                                    .frame(
+                                        height: geo.size.height * (1 - progress)
+                                    )
+                                Spacer(minLength: 0)
                             }
                         }
                     )
-                    // Sanfter Übergang der Farbe
-                    .animation(.linear(duration: 0.1), value: progress)
+                    .animation(.linear(duration: 0.08), value: progress)
             }
 
-            // 3. Rand-Leuchten
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(
-                    isReady ? card.uiColor : Color.gray.opacity(0.3),
-                    lineWidth: 2
-                )
-                .overlay(
-                    // Ein kleiner Blitz-Effekt wenn 100% erreicht sind
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(
-                            Color.white.opacity(isReady ? 0.3 : 0),
-                            lineWidth: 4
-                        )
-                        .blur(radius: 2)
-                )
-
-            // 4. Inhalt
+            // =========================
+            // CONTENT
+            // =========================
             VStack(spacing: 8) {
+
+                Spacer(minLength: 6)
+
                 Image(card.actionImage)
                     .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 45, height: 45)
-                    .grayscale(isReady ? 0 : 1.0)  // Grau wenn im Cooldown
-                    .brightness(isReady ? 0 : -0.2)
-                    .scaleEffect(isReady ? 1.0 : 0.9)
+                    .scaledToFit()
+                    .frame(width: 48, height: 48)
+                    .grayscale(isReady ? 0 : 1)
+                    .opacity(isReady ? 1 : 0.65)
+                    .scaleEffect(isReady ? 1.0 : 0.92)
 
-                Text(card.title)
+                Text(card.title.uppercased())
                     .font(
-                        .system(size: 10, weight: .black, design: .monospaced)
+                        .system(size: 11, weight: .black, design: .monospaced)
                     )
                     .foregroundColor(isReady ? .white : .gray)
                     .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .padding(.horizontal, 6)
+
+                Spacer(minLength: 6)
             }
-            .padding(5)
+
+            // =========================
+            // DISABLED SCRIM
+            // =========================
+            if !isReady {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(Color.black.opacity(0.25))
+            }
         }
-        .frame(width: 85, height: 115)
-        // Haptisches Feedback & Skalierung beim Drücken
-        .scaleEffect(isReady ? 1.0 : 0.95)
+        .frame(width: 92, height: 128)
+        .scaleEffect(isReady ? 1.0 : 0.96)
+        .animation(
+            .spring(response: 0.25, dampingFraction: 0.75),
+            value: isReady
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 18))
         .onTapGesture {
-            if isReady {
-                let haptic = UIImpactFeedbackGenerator(style: .medium)
-                haptic.impactOccurred()
-                action()
-            }
+            guard isReady else { return }
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            action()
         }
     }
 }

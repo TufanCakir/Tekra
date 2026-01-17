@@ -11,245 +11,148 @@ import SwiftUI
 struct EventBattleView: View {
     @Environment(GameEngine.self) private var engine
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
-    @Query private var allProgress: [PlayerProgress]
 
-    // States für den Ablauf (Identisch mit Arcade/Raid)
-    var event: GameEvent  // Das Event wird beim Öffnen übergeben
-    @State private var showingEventDetails = false
-    @State private var startBattle = false
+    let event: GameEvent
+    @State private var started = false
 
     var body: some View {
-        let theme = engine.progress?.theme
-        let accentColor = Color.purple  // Event-Farbe
-
         ZStack {
-            Color(hex: theme?.background.bottom ?? "#000000").ignoresSafeArea()
-
-            if startBattle {
-                // MARK: - 3. KAMPF MODUS
-                VStack(spacing: 0) {
-                    BattleArenaView(engine: engine)
-                        .ignoresSafeArea()
-                    eventControlPanel(theme: theme)
-                }
-                .transition(
-                    .asymmetric(
-                        insertion: .move(edge: .trailing),
-                        removal: .opacity
-                    )
-                )
-
-                if engine.isLevelCleared {
-                    eventVictoryOverlay(theme: theme)
-                }
-
-            } else if showingEventDetails {
-                // MARK: - 2. EVENT BRIEFING
-                eventBriefingMenu(theme: theme, accentColor: accentColor)
-                    .transition(
-                        .asymmetric(
-                            insertion: .move(edge: .trailing),
-                            removal: .move(edge: .leading)
+            if started {
+                BattleContainerView(
+                    style: .event,
+                    event: event,
+                    onExit: {
+                        engine.resetBattle()
+                        dismiss()
+                    },
+                    controlPanel: {
+                        BattleControlPanel(
+                            color: .purple,
+                            cards: engine.hand,
+                            onPlay: engine.playCard
                         )
-                    )
-            } else {
-                // MARK: - 1. CHARAKTER AUSWAHL (Grid)
-                characterSelectionGrid(theme: theme, accentColor: accentColor)
-                    .transition(.move(edge: .leading))
-            }
-        }
-        .navigationBarHidden(true)
-        .onAppear { setupDatabase() }
-    }
-
-    // MARK: - 1. Character Selection (Einheitliches Grid)
-    private func characterSelectionGrid(theme: Theme?, accentColor: Color)
-        -> some View
-    {
-        VStack(spacing: 0) {
-            headerView(
-                title: "EVENT PREPARATION",
-                subtitle: "SELECT YOUR PILOT",
-                color: accentColor
-            )
-
-            ScrollView {
-                let columns = [GridItem(.flexible()), GridItem(.flexible())]
-                LazyVGrid(columns: columns, spacing: 25) {
-                    ForEach(FighterRegistry.playableCharacters) { character in
-                        let isSelected =
-                            engine.currentPlayer?.id == character.id
-                        Button(action: {
-                            withAnimation(.spring()) {
-                                engine.selectPlayer(character)
-                            }
-                        }) {
-                            VStack(spacing: 10) {
-                                Image(character.imageName)
-                                    .resizable().scaledToFit().frame(
-                                        width: 100,
-                                        height: 100
-                                    )
-                                    .clipShape(Circle())
-                                    .overlay(
-                                        Circle().stroke(
-                                            isSelected
-                                                ? accentColor
-                                                : Color.white.opacity(0.1),
-                                            lineWidth: 3
-                                        )
-                                    )
-                                    .shadow(
-                                        color: isSelected
-                                            ? accentColor.opacity(0.5) : .clear,
-                                        radius: 10
-                                    )
-
-                                Text(character.name.uppercased()).font(
-                                    .system(
-                                        size: 14,
-                                        weight: .black,
-                                        design: .monospaced
-                                    )
-                                ).foregroundColor(isSelected ? .white : .gray)
-                            }
-                        }
                     }
-                }
-                .padding(20)
+                )
+                .transition(.opacity)
+            } else {
+                eventBriefingView
             }
-
-            if engine.currentPlayer != nil {
-                Button(action: {
-                    withAnimation(.spring()) { showingEventDetails = true }
-                }) {
-                    Text("CONFIRM PILOT").font(
-                        .system(size: 18, weight: .bold, design: .monospaced)
-                    )
-                    .foregroundColor(.white).frame(maxWidth: .infinity)
-                    .padding().background(accentColor).cornerRadius(12)
+        }
+        .animation(.easeOut(duration: 0.25), value: started)
+        .onChange(of: engine.isLevelCleared) { oldValue, newValue in
+            if newValue {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    engine.resetBattle()
+                    dismiss()
                 }
-                .padding(30)
             }
         }
     }
 
-    // MARK: - 2. Event Briefing (Spezifisch für Events)
-    private func eventBriefingMenu(theme: Theme?, accentColor: Color)
-        -> some View
-    {
-        VStack(spacing: 30) {
-            headerView(
-                title: "MISSION BRIEFING",
-                subtitle: event.title.uppercased(),
-                color: accentColor
-            )
+    // MARK: - EVENT BRIEFING
+    private var eventBriefingView: some View {
+        VStack(spacing: 28) {
 
-            VStack(alignment: .leading, spacing: 15) {
-                Label("REWARD: \(event.rewardXP) XP", systemImage: "star.fill")
-                Label(
-                    "CURRENCY: \(event.rewardCoins) COINS",
-                    systemImage: "bitcoinsign.circle.fill"
+            // Header
+            VStack(spacing: 6) {
+                Text("WORLD EVENT")
+                    .font(.caption.bold())
+                    .foregroundColor(.purple)
+
+                Text(event.title.uppercased())
+                    .font(
+                        .system(size: 26, weight: .black, design: .monospaced)
+                    )
+                    .foregroundColor(.white)
+                    .italic()
+            }
+
+            // Event Art
+            Image(event.background)
+                .resizable()
+                .scaledToFill()
+                .frame(height: 180)
+                .clipped()
+                .cornerRadius(14)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
                 )
+
+            // Beschreibung
+            VStack(alignment: .leading, spacing: 12) {
                 Text(event.description)
                     .font(.system(.body, design: .monospaced))
                     .foregroundColor(.gray)
-                    .padding(.top)
-            }
-            .foregroundColor(.white)
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 15).fill(
-                    Color.white.opacity(0.05)
-                )
-            )
-            .padding(.horizontal)
 
-            Spacer()
+                Divider().opacity(0.3)
 
-            Button(action: {
-                engine.loadEvent(event)
-                withAnimation { startBattle = true }
-            }) {
-                Text("START EVENT").font(
-                    .system(size: 20, weight: .black, design: .monospaced)
-                )
-                .foregroundColor(.black).frame(maxWidth: .infinity).padding()
-                .background(Color.yellow).cornerRadius(12)
-            }
-            .padding(30)
-        }
-    }
-
-    private func eventControlPanel(theme: Theme?) -> some View {
-        VStack(spacing: 0) {
-            Color.purple.frame(height: 2).opacity(0.3)
-            HStack(spacing: 15) {
-                ForEach(engine.hand) { card in
-                    ArcadeCardButton(card: card) { engine.playCard(card) }
-                }
-            }
-        }
-    }
-
-    private func eventVictoryOverlay(theme: Theme?) -> some View {
-        ZStack {
-            Color.black.opacity(0.9).ignoresSafeArea()
-            VStack(spacing: 30) {
-                Text("EVENT COMPLETED").font(
-                    .system(size: 32, weight: .black, design: .monospaced)
-                ).foregroundColor(.yellow).italic()
-                HStack(spacing: 40) {
-                    RewardView(
+                HStack(spacing: 30) {
+                    reward(
                         label: "XP",
-                        value: "+\(event.rewardXP)",
+                        value: "\(event.rewardXP)",
                         color: .purple
                     )
-                    RewardView(
+                    reward(
                         label: "COINS",
-                        value: "+\(event.rewardCoins)",
+                        value: "\(event.rewardCoins)",
                         color: .orange
                     )
                 }
-                .padding(25).background(Color.white.opacity(0.05)).cornerRadius(
-                    20
-                )
+            }
+            .padding()
+            .background(Color.white.opacity(0.05))
+            .cornerRadius(16)
 
-                Button("RETURN TO HUB") { dismiss() }
-                    .font(.system(size: 20, weight: .bold, design: .monospaced))
-                    .foregroundColor(.black).padding(.horizontal, 50).padding(
-                        .vertical,
-                        15
-                    ).background(Color.green).cornerRadius(12)
+            Spacer()
+
+            // Start Button
+            Button {
+                engine.loadEvent(event)
+                started = true
+            } label: {
+                Text("START EVENT")
+                    .font(
+                        .system(size: 18, weight: .black, design: .monospaced)
+                    )
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.purple)
+                    .cornerRadius(14)
+                    .shadow(color: .purple.opacity(0.4), radius: 10)
             }
         }
+        .padding()
+        .background(Color.black.ignoresSafeArea())
     }
 
-    private func headerView(title: String, subtitle: String, color: Color)
-        -> some View
+    // MARK: - Reward UI
+    private func reward(label: String, value: String, color: Color) -> some View
     {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(title).font(
-                .system(size: 14, weight: .bold, design: .monospaced)
-            ).foregroundColor(color)
-            Text(subtitle).font(
-                .system(size: 26, weight: .black, design: .monospaced)
-            ).foregroundColor(.white)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading).padding(
-            .horizontal,
-            25
-        ).padding(.top, 40)
-    }
+        VStack(spacing: 4) {
+            Text(label)
+                .font(.caption)
+                .foregroundColor(.gray)
 
-    private func setupDatabase() {
-        if let firstProgress = allProgress.first {
-            engine.setupDatabase(
-                context: modelContext,
-                playerProgress: firstProgress
-            )
+            Text(value)
+                .font(.title2.bold())
+                .foregroundColor(color)
         }
+    }
+}
+
+extension GameEngine {
+    func resetBattle() {
+        isLevelCleared = false
+        isPerformingAction = false
+        hand.removeAll()
+        currentEnemy = nil
+        currentWave = nil
+        currentRoundIndex = 0
+        // If `turnSystem` is private, prefer calling a public API to start the player's turn.
+        // Uncomment the next line if you have a public method available, e.g., `startPlayerTurn()`.
+        // startPlayerTurn()
     }
 }
 

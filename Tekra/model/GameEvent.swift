@@ -6,7 +6,7 @@
 //
 import Foundation
 
-struct GameEvent: Identifiable, Codable {
+struct GameEvent: Identifiable, Codable, Hashable {
     let id: String
     let title: String
     let description: String
@@ -16,24 +16,27 @@ struct GameEvent: Identifiable, Codable {
     let requiredLevel: Int
     let active: Bool
 
-    // HELPER: Extrahiert XP aus der rewards-Liste
+    // MARK: - Rewards Helper
+
     var rewardXP: Int {
-        rewards.first(where: { $0.type == .xp })?.amount ?? 0
+        rewards.first { $0.type == .xp }?.amount ?? 0
     }
 
-    // HELPER: Falls du Coins hinzufügen möchtest (ergänze .coins im enum unten)
     var rewardCoins: Int {
-        rewards.first(where: { $0.type == .coins })?.amount ?? 0
+        rewards.first { $0.type == .coins }?.amount ?? 0
     }
 }
 
-struct EventReward: Codable {
+struct EventReward: Codable, Hashable {
     let type: RewardType
     let amount: Int?
     let idRef: String?
 
-    enum RewardType: String, Codable {
-        case xp, card, theme, coins  // 'coins' hinzugefügt für das Layout
+    enum RewardType: String, Codable, Hashable {
+        case xp
+        case card
+        case theme
+        case coins
     }
 }
 

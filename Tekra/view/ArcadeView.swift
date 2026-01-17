@@ -10,342 +10,84 @@ import SwiftUI
 
 struct ArcadeView: View {
     @Environment(GameEngine.self) private var engine
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
-    @Query private var allProgress: [PlayerProgress]
-
-    @State private var selectedWave: ArcadeWave?
-    @State private var showingWaveSelection = false
-
-    // Grid-Konfiguration für 2 Spalten
-    private let columns = [
-        GridItem(.flexible(), spacing: 20),
-        GridItem(.flexible(), spacing: 20),
-    ]
+    @State private var started = false
 
     var body: some View {
-        let theme = engine.progress?.theme
-
         ZStack {
-            Color(hex: theme?.background.bottom ?? "#000000").ignoresSafeArea()
-
-            if selectedWave != nil {
-                // MARK: - 3. KAMPF MODUS
-                VStack(spacing: 0) {
-                    BattleArenaView(engine: engine)
-                        .ignoresSafeArea()
-                    arcadeControlPanel(theme: theme)
-                }
-                .transition(
-                    .asymmetric(
-                        insertion: .move(edge: .trailing),
-                        removal: .opacity
-                    )
-                )
-
-                if engine.isLevelCleared {
-                    levelClearedOverlay(theme: theme)
-                }
-
-            } else if showingWaveSelection {
-                // MARK: - 2. WELLEN AUSWAHL
-                waveSelectionMenu(theme: theme)
-                    .transition(
-                        .asymmetric(
-                            insertion: .move(edge: .trailing),
-                            removal: .move(edge: .leading)
+            if started {
+                BattleContainerView(
+                    style: .arcade,
+                    onExit: {
+                        engine.isLevelCleared = false
+                        started = false
+                    },
+                    controlPanel: {
+                        BattleControlPanel(
+                            color: .blue,
+                            cards: engine.hand,
+                            onPlay: engine.playCard
                         )
-                    )
+                    }
+                )
+                .transition(.opacity)
             } else {
-                // MARK: - 1. CHARAKTER AUSWAHL (Grid)
-                characterSelectionGrid(theme: theme)
-                    .transition(.move(edge: .leading))
+                arcadeSetupView
             }
         }
-        .onAppear { setupDatabase() }
+        .animation(.easeOut(duration: 0.25), value: started)
     }
 
-    // MARK: - Character Grid UI
-    private func characterSelectionGrid(theme: Theme?) -> some View {
-        let accentColor = Color(hex: theme?.energy.ice.core ?? "#00FFFF")
+    // MARK: - ARCADE SETUP
+    private var arcadeSetupView: some View {
+        VStack(spacing: 28) {
 
-        return VStack(spacing: 0) {
-            headerView(
-                title: "SELECT PILOT",
-                subtitle: "CHOOSE YOUR UNIT",
-                theme: theme
-            )
-            .padding(.bottom, 20)
+            // Header
+            VStack(spacing: 6) {
+                Text("ARCADE MODE")
+                    .font(.caption.bold())
+                    .foregroundColor(.cyan)
 
-            ScrollView {
-
-                LazyVGrid(columns: columns, spacing: 30) {
-                    ForEach(FighterRegistry.playableCharacters) { character in
-                        let isSelected =
-                            engine.currentPlayer?.id == character.id
-
-                        Button(action: {
-                            withAnimation(
-                                .spring(response: 0.3, dampingFraction: 0.7)
-                            ) {
-                                engine.selectPlayer(character)
-                            }
-                        }) {
-                            VStack(spacing: 12) {
-                                // RUNDES ICON
-                                ZStack {
-                                    Circle()
-                                        .stroke(
-                                            isSelected
-                                                ? accentColor
-                                                : Color.white.opacity(0.1),
-                                            lineWidth: 3
-                                        )
-                                        .frame(width: 110, height: 110)
-
-                                    if isSelected {
-                                        Circle()
-                                            .fill(accentColor.opacity(0.15))
-                                            .frame(width: 100, height: 100)
-                                            .blur(radius: 15)
-                                    }
-
-                                    Image(character.imageName)
-                                        .resizable().scaledToFit().frame(
-                                            width: 100,
-                                            height: 100
-                                        )
-                                        .scaledToFill()
-                                        .background(Color.black.opacity(0.4))
-                                }
-
-                                // NAME & MINI STATS
-                                VStack(spacing: 4) {
-                                    Text(character.name.uppercased())
-                                        .font(
-                                            .system(
-                                                size: 14,
-                                                weight: .black,
-                                                design: .monospaced
-                                            )
-                                        )
-                                        .foregroundColor(
-                                            isSelected ? .white : .gray
-                                        )
-
-                                    HStack(spacing: 4) {
-                                        Image(systemName: "bolt.fill")
-                                        Text("\(Int(character.attackPower))")
-                                    }
-                                    .font(.system(size: 10, weight: .bold))
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 3)
-                                    .background(
-                                        isSelected
-                                            ? accentColor.opacity(0.2)
-                                            : Color.white.opacity(0.05)
-                                    )
-                                    .foregroundColor(
-                                        isSelected ? accentColor : .gray
-                                    )
-                                    .clipShape(Capsule())
-                                }
-                            }
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                }
-                .padding(20)
-            }
-
-            // Bestätigungs-Button unten fixiert
-            if engine.currentPlayer != nil {
-                Button(action: {
-                    withAnimation(.spring()) { showingWaveSelection = true }
-                }) {
-                    Text("CONFIRM PILOT")
-                        .font(
-                            .system(
-                                size: 18,
-                                weight: .bold,
-                                design: .monospaced
-                            )
-                        )
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(accentColor)
-                        .cornerRadius(12)
-                        .shadow(color: accentColor.opacity(0.4), radius: 10)
-                }
-                .padding(30)
-            }
-        }
-    }
-
-    // MARK: - Wave Selection UI
-    private func waveSelectionMenu(theme: Theme?) -> some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                headerView(
-                    title: "ARCADE MODE",
-                    subtitle: "SELECT MISSION SECTOR",
-                    theme: theme
-                )
-
-                ForEach(FighterRegistry.currentArcadeWaves) { wave in
-                    Button(action: {
-                        engine.startArcade(wave: wave)
-                        withAnimation { selectedWave = wave }
-                    }) {
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(wave.title.uppercased()).font(
-                                    .system(
-                                        size: 18,
-                                        weight: .black,
-                                        design: .monospaced
-                                    )
-                                ).foregroundColor(.white)
-                                Text("\(wave.rounds.count) STAGES").font(
-                                    .caption
-                                ).foregroundColor(.gray)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right").foregroundColor(
-                                Color(hex: theme?.energy.ice.core ?? "#4DDCFF")
-                            )
-                        }
-                        .padding(20)
-                        .background(
-                            RoundedRectangle(cornerRadius: 15).fill(
-                                Color.white.opacity(0.05)
-                            )
-                        )
-                    }
-                }
-
-                Button("CHANGE PILOT") {
-                    withAnimation { showingWaveSelection = false }
-                }
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
-                .foregroundColor(.gray)
-                .padding(.top, 10)
-            }
-            .padding()
-        }
-    }
-
-    // MARK: - Helper Views & Components
-    private func headerView(title: String, subtitle: String, theme: Theme?)
-        -> some View
-    {
-        VStack(alignment: .leading, spacing: 5) {
-            Text(title).font(
-                .system(size: 14, weight: .bold, design: .monospaced)
-            ).foregroundColor(Color(hex: theme?.energy.ice.core ?? "#4DDCFF"))
-            Text(subtitle).font(
-                .system(size: 26, weight: .black, design: .monospaced)
-            ).foregroundColor(.white)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 25)
-        .padding(.top, 40)
-    }
-
-    private func arcadeControlPanel(theme: Theme?) -> some View {
-        VStack(spacing: 0) {
-            Color(hex: theme?.metal.edgeGlow ?? "#FFFFFF").frame(height: 2)
-                .opacity(0.3)
-            HStack(spacing: 15) {
-                ForEach(engine.hand) { card in
-                    ArcadeCardButton(card: card) { engine.playCard(card) }
-                }
-            }
-        }
-    }
-
-    private func levelClearedOverlay(theme: Theme?) -> some View {
-        ZStack {
-            Color.black.opacity(0.9).ignoresSafeArea()
-            VStack(spacing: 30) {
-                Text("MISSION SUCCESS").font(
-                    .system(size: 32, weight: .black, design: .monospaced)
-                ).foregroundColor(.yellow).italic()
-                HStack(spacing: 40) {
-                    RewardView(
-                        label: "XP",
-                        value: "+75",
-                        color: Color(hex: theme?.energy.ice.core ?? "#4DDCFF")
+                Text("SELECT YOUR PILOT")
+                    .font(
+                        .system(size: 26, weight: .black, design: .monospaced)
                     )
-                    RewardView(label: "COINS", value: "+20", color: .orange)
-                }
-                .padding(25).background(Color.white.opacity(0.05)).cornerRadius(
-                    20
-                )
-
-                Button(action: {
-                    withAnimation {
-                        if engine.currentRoundIndex
-                            >= (engine.currentWave?.rounds.count ?? 0) - 1
-                        {
-                            selectedWave = nil
-                            engine.isLevelCleared = false
-                        } else {
-                            engine.nextArcadeRound()
-                        }
-                    }
-                }) {
-                    Text(
-                        engine.currentRoundIndex
-                            >= (engine.currentWave?.rounds.count ?? 0) - 1
-                            ? "RETURN TO BASE" : "PROCEED"
-                    )
-                    .font(.system(size: 20, weight: .bold, design: .monospaced))
-                    .foregroundColor(.black).padding(.horizontal, 50).padding(
-                        .vertical,
-                        15
-                    ).background(Color.green).cornerRadius(12)
-                }
+                    .foregroundColor(.white)
             }
-        }
-    }
 
-    private func setupDatabase() {
-        if let firstProgress = allProgress.first {
-            engine.setupDatabase(
-                context: modelContext,
-                playerProgress: firstProgress
-            )
-        }
-    }
-}
+            // Charakterauswahl
+            CharacterPickerView()
+                .frame(maxHeight: 300)
 
-// MARK: - Sub-Components
-struct StatMiniView: View {
-    let icon: String
-    let value: String
-    let color: Color
-    var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon).font(.system(size: 10))
-            Text(value).font(
-                .system(size: 12, weight: .bold, design: .monospaced)
-            )
-        }.foregroundColor(color).padding(.horizontal, 8).padding(.vertical, 4)
-            .background(Color.black.opacity(0.3)).cornerRadius(5)
-    }
-}
+            Spacer()
 
-struct RewardView: View {
-    let label: String
-    let value: String
-    let color: Color
-    var body: some View {
-        VStack {
-            Text(label).font(.caption).foregroundColor(.gray)
-            Text(value).font(.title).bold().foregroundColor(color)
+            // Start Button
+            Button {
+                guard
+                    let wave = FighterRegistry.currentArcadeWaves.first,
+                    engine.currentPlayer != nil
+                else { return }
+
+                engine.startArcade(wave: wave)
+                started = true
+
+            } label: {
+                Text("START ARCADE")
+                    .font(
+                        .system(size: 18, weight: .black, design: .monospaced)
+                    )
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.cyan)
+                    .cornerRadius(14)
+                    .shadow(color: .cyan.opacity(0.4), radius: 10)
+            }
+            .disabled(engine.currentPlayer == nil)
+            .opacity(engine.currentPlayer == nil ? 0.4 : 1)
+
         }
+        .padding()
+        .background(Color.black.ignoresSafeArea())
     }
 }
 

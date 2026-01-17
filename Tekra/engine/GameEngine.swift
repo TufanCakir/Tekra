@@ -21,6 +21,17 @@ enum GameMode {
 
 @Observable @MainActor
 class GameEngine {
+    private let combatSystem = CombatSystem()
+    private let cardSystem = CardSystem()
+    private let progressionSystem = ProgressionSystem()
+    private let effectSystem = EffectSystem()
+    private let turnSystem = TurnSystem()
+    private let enemyAI = EnemyAI()
+
+    var enemyScale: CGFloat { effectSystem.enemyScale }
+    var shakeOffset: CGFloat { effectSystem.shakeOffset }
+    var isFrozen: Bool { effectSystem.isFrozen }
+
     // MARK: - Properties
     var currentMode: GameMode = .event
     var currentWave: ArcadeWave?
@@ -32,13 +43,9 @@ class GameEngine {
 
     private(set) var gameTime: Double = 0
     var lastUIUpdateTime: Double = 0
-    private var cardCooldownTimers: [String: Double] = [:]
 
     var currentBackground: String = "skybox"
     var p1X: CGFloat = 0
-    var enemyScale: CGFloat = 1
-    var shakeOffset: CGFloat = 0
-    var isFrozen = false
     private let playerEntity = GKEntity()
 
     var playerHP: CGFloat = 100
@@ -55,67 +62,50 @@ class GameEngine {
     var progress: PlayerProgress?  // Nutzt jetzt dein echtes SwiftData Modell
 
     // MARK: - Initialization
+    private var modeController: ModeController!
+
     init(mode: GameMode = .arcade) {
         FighterRegistry.loadAll()
         self.allCards = CardLoader.load()
         self.currentMode = mode
 
-        // Setze den ersten verfügbaren Helden als Standard
         if let firstHero = FighterRegistry.playableCharacters.first {
             self.currentPlayer = firstHero
             self.playerHP = firstHero.maxHP
         }
 
         setupDisplayLink()
+
+        // ✅ JETZT ist self vollständig initialisiert
+        self.modeController = ModeController(engine: self)
     }
 
     // WICHTIG: Diese Methode wird gerufen, wenn du im Menü einen Helden anklickst
     func selectPlayer(_ fighter: Fighter) {
-        self.currentPlayer = fighter
-        self.playerHP = fighter.maxHP
-        print("👤 Held gewählt: \(fighter.name) (HP: \(fighter.maxHP))")
+        currentPlayer = fighter
+        playerHP = fighter.maxHP
+        progress?.selectedFighterID = fighter.id
     }
 
-    // In startRaid oder startArcade wird dann dieser gewählte Held beibehalten
-    func startRaid(bossID: String) {
-        self.currentMode = .raid
-        if let bossData = FighterRegistry.raidBoss(id: bossID) {
-            // Wir übergeben KEINEN player im applyMatchSettings, damit der gewählte bleibt
-            applyMatchSettings(
-                enemy: bossData.toFighter(),
-                background: bossData.raidBackground
-            )
-        }
+    func unlockCharacterAndSave(_ id: String) {
+        progress?.unlockCharacter(id)
+        try? modelContext?.save()
     }
 
-    // ARCADE STARTEN: Nutzt die arcade.json Struktur
     func startArcade(wave: ArcadeWave) {
-        self.currentMode = .arcade  // WICHTIG
-        self.currentWave = wave
-        self.currentRoundIndex = 0
-        loadArcadeRound(index: 0)
+        modeController.startArcade(wave: wave)
     }
 
-    // EVENT STARTEN: Lädt aus der events.json
-    func loadEvent(_ event: GameEvent) {
-        self.currentMode = .event
-        // Wenn in deinem GameEvent nur IDs stehen, suchen wir sie in den anderen JSONs
-        // oder das GameEvent Modell muss den Fighter direkt enthalten.
+    func startRaid(bossID: String) {
+        modeController.startRaid(bossID: bossID)
+    }
 
-        // Beispiel: Wir nutzen den ersten Gegner-Namen aus dem Event als Bild-ID
-        if let firstEnemyID = event.enemies.first {
-            let eventFighter = Fighter(
-                id: event.id,
-                name: event.title,
-                imageName: firstEnemyID,  // Nutzt die ID als Asset-Namen
-                maxHP: 100,
-                attackPower: 20
-            )
-            applyMatchSettings(
-                enemy: eventFighter,
-                background: event.background
-            )
-        }
+    func loadEvent(_ event: GameEvent) {
+        modeController.startEvent(event)
+    }
+
+    func nextArcadeRound() {
+        modeController.nextArcadeRound()
     }
 
     private func applyMatchSettings(
@@ -123,8 +113,9 @@ class GameEngine {
         enemy: Fighter,
         background: String
     ) {
-        // Wenn ein neuer Spieler übergeben wird (z.B. durch Auswahlmenü), nimm ihn.
-        // Ansonsten behalte den aktuell in der Engine gespeicherten (currentPlayer).
+        // ⬇️ HIER rein
+        enemyAI.configurePattern(for: enemy)
+
         if let player = player {
             self.currentPlayer = player
         }
@@ -164,69 +155,102 @@ class GameEngine {
         }
     }
 
-    func nextArcadeRound() {
-        loadArcadeRound(index: currentRoundIndex + 1)
-    }
-
     // MARK: - Combat & Victory Logic
     private func handleVictory() {
         isLevelCleared = true
-
-        // Dynamische Belohnung berechnen
-        let xpGain = (currentMode == .arcade) ? 75 : 50
-        let coinGain = (currentMode == .arcade) ? 20 : 10
-
-        // Speichern in SwiftData via PlayerProgress Modell
-        progress?.addXP(xpGain)
-        progress?.addCoins(coinGain)
-
-        print("🏆 Sieg! +\(xpGain) XP und +\(coinGain) Coins erhalten.")
-        // Enemy victory handling could be added here similarly
+        progressionSystem.applyVictoryRewards(
+            mode: currentMode,
+            progress: progress
+        )
     }
 
-    private func triggerHitEffects(damage: CGFloat, toEnemy: Bool = true) {
-        isFrozen = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            self.isFrozen = false
-        }
+    func syncSelectedCharacterFromProgress() {
+        guard
+            let id = progress?.selectedFighterID,
+            let fighter = FighterRegistry.playableCharacters.first(where: {
+                $0.id == id
+            })
+        else { return }
+
+        currentPlayer = fighter
+    }
+
+    private func triggerHitEffects(
+        damage: CGFloat,
+        toEnemy: Bool = true
+    ) {
+        var defeated = false
 
         if toEnemy {
-            enemyHP = max(enemyHP - damage, 0)
-            enemyScale = 1.15
-            withAnimation(.spring(duration: 0.2)) { self.enemyScale = 1.0 }
-        } else {
-            playerHP = max(playerHP - damage, 0)
-        }
+            // 🔥 HP-Änderung sauber animieren
+            withAnimation(.easeOut(duration: 0.25)) {
+                defeated = combatSystem.applyDamage(
+                    damage: damage,
+                    to: &enemyHP
+                )
+            }
 
-        let shakeFrames: [CGFloat] = [10, -8, 6, -4, 2, 0]
-        for (i, offset) in shakeFrames.enumerated() {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.02) {
-                self.shakeOffset = offset
+            enemyAI.updatePhaseIfNeeded(currentHP: enemyHP)
+            effectSystem.hitEnemy()
+        } else {
+            withAnimation(.easeOut(duration: 0.25)) {
+                defeated = combatSystem.applyDamage(
+                    damage: damage,
+                    to: &playerHP
+                )
             }
         }
 
-        // Victory checks
-        if enemyHP <= 0 { handleVictory() }
+        // 📸 Erst Shake
+        effectSystem.shakeCamera()
+
+        // ❄️ Dann kurzer Hit-Stop (minimal verzögert)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) {
+            self.effectSystem.hitStop()
+        }
+
+        // 🏆 Victory nur einmal & sauber
+        if toEnemy && defeated {
+            isPerformingAction = false
+            turnSystem.lock()  // 🔒 GANZ WICHTIG
+            handleVictory()
+        }
+    }
+
+    func softResetBattle() {
+        isLevelCleared = false
+        isPerformingAction = false
+    }
+
+    func hardResetBattle() {
+        softResetBattle()
+        hand.removeAll()
+        currentEnemy = nil
+        currentWave = nil
+        currentRoundIndex = 0
     }
 
     // MARK: - Helpers
     func isCardReady(_ card: Card) -> Bool {
-        gameTime >= (cardCooldownTimers[card.id] ?? 0)
+        cardSystem.isReady(card: card, time: gameTime)
     }
 
     func cooldownProgress(for card: Card) -> Double {
-        guard let endTime = cardCooldownTimers[card.id], card.cooldown > 0
-        else { return 1.0 }
-        let remaining = max(endTime - gameTime, 0)
-        return min(max(1.0 - (remaining / card.cooldown), 0.0), 1.0)
+        cardSystem.progress(card: card, time: gameTime)
     }
 
     func playCard(_ card: Card) {
-        guard isCardReady(card), !isPerformingAction, !isLevelCleared else {
-            return
-        }
+        guard
+            turnSystem.canPlayerAct(),
+            cardSystem.isReady(card: card, time: gameTime),
+            !isPerformingAction,
+            !isLevelCleared
+        else { return }
+
+        turnSystem.lock()
         isPerformingAction = true
-        cardCooldownTimers[card.id] = gameTime + card.cooldown
+
+        cardSystem.play(card: card, time: gameTime)
         runAttackSequence(card)
         replaceCardInHand(card)
     }
@@ -246,10 +270,49 @@ class GameEngine {
             DispatchQueue.main.asyncAfter(
                 deadline: .now() + max(0.4, card.cooldown * 0.5)
             ) {
-                guard !self.isLevelCleared, self.enemyHP > 0 else { return }
-                let retaliation = max(5, card.damage * 0.3)
-                self.triggerHitEffects(damage: retaliation, toEnemy: false)
+                guard !self.isLevelCleared, self.enemyHP > 0 else {
+                    self.turnSystem.startPlayerTurn()  // 🔥 WICHTIG
+                    return
+                }
+
+                self.turnSystem.startEnemyTurn()
+                self.performEnemyTurn()
             }
+        }
+    }
+
+    private func performEnemyTurn() {
+        guard let enemy = currentEnemy else { return }
+
+        let action = enemyAI.chooseAction(
+            enemy: enemy,
+            playerHP: playerHP
+        )
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            switch action {
+
+            case .basicAttack(let multiplier):
+                self.triggerHitEffects(
+                    damage: enemy.attackPower * multiplier,
+                    toEnemy: false
+                )
+
+            case .heavyAttack:
+                self.triggerHitEffects(
+                    damage: enemy.attackPower * 1.6,
+                    toEnemy: false
+                )
+
+            case .wait:
+                break
+
+            case .enrage:
+                // später: Buff-System
+                break
+            }
+
+            self.turnSystem.startPlayerTurn()
         }
     }
 
@@ -279,6 +342,7 @@ class GameEngine {
     func setupDatabase(context: ModelContext, playerProgress: PlayerProgress) {
         self.modelContext = context
         self.progress = playerProgress
+        syncSelectedCharacterFromProgress()
     }
 
     func setTheme(_ id: String) {

@@ -35,6 +35,48 @@ struct ArcadeEnemy: Codable {
 struct ArcadeResponse: Codable {
     let waves: [ArcadeWave]
 }
+/// Story-Hilfswave mit genau einem Gegner
+extension ArcadeWave {
+
+    /// Story-Hilfswave mit genau einem Gegner
+    /// - Parameters:
+    ///   - enemyID: ID aus Story / Registry
+    ///   - hpMultiplier: Skalierung der Lebenspunkte (z. B. 1.5 für Boss)
+    ///   - damageMultiplier: Skalierung des Schadens
+    static func singleEnemy(
+        _ enemyID: String,
+        hpMultiplier: CGFloat = 1.0,
+        damageMultiplier: CGFloat = 1.0
+    ) -> ArcadeWave {
+
+        let enemy =
+            FighterRegistry.enemy(id: enemyID)
+            ?? Fighter(
+                id: "fallback",
+                name: "UNKNOWN",
+                imageName: "unknown_enemy",
+                maxHP: 50,
+                attackPower: 5
+            )
+
+        let scaledHP = max(1, enemy.maxHP * hpMultiplier)
+        let scaledAttack = max(1, enemy.attackPower * damageMultiplier)
+
+        let arcadeEnemy = ArcadeEnemy(
+            id: Int.random(in: 10_000...99_999),
+            name: enemy.name,
+            image: enemy.imageName,
+            maxHP: Double(scaledHP),
+            attack: Int(scaledAttack)
+        )
+
+        return ArcadeWave(
+            id: Int.random(in: 1000...9999),
+            title: "Story Battle",
+            rounds: [[arcadeEnemy]]
+        )
+    }
+}
 
 enum ArcadeLoader {
     static func load() -> [ArcadeWave] {

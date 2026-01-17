@@ -2,7 +2,7 @@
     {
         "id": "cyber_titan",
         "name": "Cyber Titan Unit-01",
-        "imageName": "ice_warrior",
+        "imageName": "story_frozen_king",
         "maxHP": 1500,
         "attackPower": 45,
         "raidBackground": "skybox"
@@ -10,7 +10,7 @@
     {
         "id": "void_reaper",
         "name": "The Void Reaper",
-        "imageName": "ice_warrior",
+        "imageName": "story_frozen_king",
         "maxHP": 2500,
         "attackPower": 60,
         "raidBackground": "skybox"

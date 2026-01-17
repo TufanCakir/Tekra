@@ -36,7 +36,6 @@ struct SettingsView: View {
                 ThemeLoader.load(id: engine.activeThemeID).chromeGradient()
                     .ignoresSafeArea()
                     .overlay(Color.black.opacity(0.6))
-
                 ScrollView {
                     VStack(spacing: 35) {
 
@@ -94,122 +93,123 @@ struct SettingsView: View {
 
                         // --- THEME SELECTION SECTION ---
                         VStack(alignment: .leading, spacing: 15) {
-                            sectionHeader(title: "HARDWARE APPEARANCE")
-
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 20) {
-                                    ForEach(availableThemes, id: \.1) {
-                                        themeName,
-                                        themeID in
-                                        ThemeCard(
-                                            name: themeName,
-                                            themeID: themeID,
-                                            isSelected: engine.activeThemeID
-                                                == themeID
-                                        ) {
-                                            engine.setTheme(themeID)
-                                            UIImpactFeedbackGenerator(
-                                                style: .medium
-                                            ).impactOccurred()
+                            systemSection(title: "HARDWARE APPEARANCE") {
+                                ScrollView(.horizontal, showsIndicators: false)
+                                {
+                                    HStack(spacing: 18) {
+                                        ForEach(availableThemes, id: \.1) {
+                                            themeName,
+                                            themeID in
+                                            ThemeCard(
+                                                name: themeName,
+                                                themeID: themeID,
+                                                isSelected: engine.activeThemeID
+                                                    == themeID
+                                            ) {
+                                                engine.setTheme(themeID)
+                                                UIImpactFeedbackGenerator(
+                                                    style: .medium
+                                                ).impactOccurred()
+                                            }
                                         }
                                     }
+                                    .padding(.horizontal, 6)
                                 }
-                                .padding(.horizontal, 25)
                             }
-                        }
 
-                        // --- ABOUT / SYSTEM INFORMATION ---
-                        VStack(alignment: .leading, spacing: 15) {
-                            sectionHeader(title: "SYSTEM INFORMATION")
-
-                            VStack(spacing: 1) {
-                                settingsRow(
-                                    title: "Kernel Status",
-                                    value: "STABLE",
-                                    color: .green
-                                )
-                                Divider().background(Color.white.opacity(0.1))
-                                settingsRow(
-                                    title: "Software Version",
-                                    value: "v\(appVersion)"
-                                )
-                                Divider().background(Color.white.opacity(0.1))
-                                settingsRow(
-                                    title: "Build Revision",
-                                    value: "REV-\(buildNumber)"
-                                )
-
-                                Divider().background(Color.white.opacity(0.1))
+                            // --- ABOUT / SYSTEM INFORMATION ---
+                            VStack(alignment: .leading, spacing: 15) {
+                                systemSection(title: "SYSTEM INFORMATION") {
+                                    VStack(spacing: 0) {
+                                        settingsRow(
+                                            title: "Kernel Status",
+                                            value: "STABLE",
+                                            color: .green
+                                        )
+                                        dividerLine
+                                        settingsRow(
+                                            title: "Software Version",
+                                            value: "v\(appVersion)"
+                                        )
+                                        dividerLine
+                                        settingsRow(
+                                            title: "Build Revision",
+                                            value: "REV-\(buildNumber)"
+                                        )
+                                    }
+                                }
 
                                 // Beschreibungstext
                                 VStack(alignment: .leading, spacing: 10) {
-                                    Text("PROTOCOL DESCRIPTION")
+                                    DisclosureGroup {
+                                        Text(
+                                            """
+                                            Tekra is a high-performance neural combat simulator.
+                                            All hardware themes are cryptographically verified
+                                            for optimal operator focus.
+                                            """
+                                        )
                                         .font(
                                             .system(
-                                                size: 10,
-                                                weight: .bold,
+                                                size: 12,
+                                                weight: .medium,
                                                 design: .monospaced
                                             )
                                         )
-                                        .foregroundColor(.white.opacity(0.3))
+                                        .foregroundColor(.white.opacity(0.7))
+                                        .lineSpacing(4)
+                                    } label: {
+                                        Text("PROTOCOL DESCRIPTION")
+                                            .font(
+                                                .system(
+                                                    size: 11,
+                                                    weight: .black,
+                                                    design: .monospaced
+                                                )
+                                            )
+                                            .foregroundColor(
+                                                .white.opacity(0.4)
+                                            )
+                                    }
 
-                                    Text(
-                                        "Tekra is a high-performance neural combat simulator. All hardware themes are cryptographically verified for optimal operator focus."
-                                    )
-                                    .font(
-                                        .system(
-                                            size: 12,
-                                            weight: .medium,
-                                            design: .monospaced
-                                        )
-                                    )
-                                    .foregroundColor(.white.opacity(0.7))
-                                    .lineSpacing(4)
+                                    // --- DISMISS BUTTON ---
+                                    Button {
+                                        dismiss()
+                                    } label: {
+                                        Text("EXIT CONFIGURATION")
+                                            .font(
+                                                .system(
+                                                    size: 14,
+                                                    weight: .black,
+                                                    design: .monospaced
+                                                )
+                                            )
+                                            .foregroundColor(.black)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 14)
+                                            .background(
+                                                LinearGradient(
+                                                    colors: [.cyan, .blue],
+                                                    startPoint: .top,
+                                                    endPoint: .bottom
+                                                )
+                                            )
+                                            .cornerRadius(12)
+                                            .shadow(
+                                                color: .cyan.opacity(0.4),
+                                                radius: 10
+                                            )
+                                    }
+                                    .padding(.horizontal, 24)
+                                    .padding(.bottom, 40)
                                 }
-                                .padding(20)
-                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
-                            .background(Color.black.opacity(0.4))
-                            .cornerRadius(12)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12).stroke(
-                                    Color.white.opacity(0.1),
-                                    lineWidth: 1
-                                )
-                            )
-                            .padding(.horizontal, 25)
                         }
-
-                        // --- DISMISS BUTTON ---
-                        Button(action: { dismiss() }) {
-                            Text("CLOSE CONFIGURATION")
-                                .font(
-                                    .system(
-                                        size: 14,
-                                        weight: .black,
-                                        design: .monospaced
-                                    )
-                                )
-                                .foregroundColor(.black)
-                                .padding(.vertical, 12)
-                                .frame(maxWidth: .infinity)
-                                .background(Color.cyan)
-                                .cornerRadius(8)
-                        }
-                        .padding(.horizontal, 25)
-                        .padding(.bottom, 40)
                     }
                 }
+                .toolbar(.hidden)
             }
-            .toolbar(.hidden)
         }
-    }
-
-    private func sectionHeader(title: String) -> some View {
-        Text(title)
-            .font(.system(size: 12, weight: .black, design: .monospaced))
-            .foregroundColor(.cyan)
-            .padding(.leading, 25)
     }
 
     private func settingsRow(
@@ -285,4 +285,30 @@ struct ThemeCard: View {
         }
         .buttonStyle(PlainButtonStyle())
     }
+}
+
+private var dividerLine: some View {
+    Divider().background(Color.white.opacity(0.08))
+}
+
+private func systemSection<Content: View>(
+    title: String,
+    content: () -> Content
+) -> some View {
+    VStack(alignment: .leading, spacing: 16) {
+        Text(title)
+            .font(.system(size: 12, weight: .black, design: .monospaced))
+            .foregroundColor(.cyan)
+            .tracking(1.5)
+
+        content()
+    }
+    .padding(20)
+    .background(Color.black.opacity(0.45))
+    .cornerRadius(16)
+    .overlay(
+        RoundedRectangle(cornerRadius: 16)
+            .stroke(Color.white.opacity(0.08), lineWidth: 1)
+    )
+    .padding(.horizontal, 24)
 }

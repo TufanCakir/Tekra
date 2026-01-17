@@ -3,14 +3,14 @@
         "id": "tekra_core",
         "name": "Sly",
         "imageName": "sly",
-        "maxHP": 100,
+        "maxHP": 300,
         "attackPower": 15
     },
     {
-        "id": "neon_striker",
-        "name": "ice_warrior",
-        "imageName": "ice_warrior",
-        "maxHP": 80,
+        "id": "ice_warrior",
+        "name": "Ice Warrior",
+        "imageName": "story_frozen_king",
+        "maxHP": 300,
         "attackPower": 25
     }
 ]

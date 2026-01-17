@@ -1,0 +1,54 @@
+{
+    "chapters": [
+        {
+            "id": "chapter_1",
+            "title": "AWAKENING",
+            "description": "The first clash begins.",
+            "background": "skybox",
+            "stages": [
+                {
+                    "id": "c1_boss_normal",
+                    "title": "Frozen King",
+                    "enemy": "story_frozen_king",
+                    "baseHP": 100,
+                    "baseAttack": 22,
+                    "boss": true,
+                    "difficulties": [
+                        "normal",
+                        "elite",
+                        "boss"
+                    ],
+                    "unlocksCharacter": "ice_warrior"
+                },
+                {
+                    "id": "c1_boss_elite",
+                    "title": "Frozen King",
+                    "enemy": "story_frozen_king",
+                    "baseHP": 420,
+                    "baseAttack": 22,
+                    "boss": true,
+                    "difficulties": [
+                        "normal",
+                        "elite",
+                        "boss"
+                    ],
+                    "unlocksCharacter": "ice_warrior"
+                },
+                {
+                    "id": "c1_boss_boss",
+                    "title": "Frozen King",
+                    "enemy": "story_frozen_king",
+                    "baseHP": 420,
+                    "baseAttack": 22,
+                    "boss": true,
+                    "difficulties": [
+                        "normal",
+                        "elite",
+                        "boss"
+                    ],
+                    "unlocksCharacter": "ice_warriorå"
+                }
+            ]
+        }
+    ]
+}
