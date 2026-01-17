@@ -44,7 +44,6 @@ struct BattleContainerView<ControlPanel: View>: View {
                     engine: engine,
                     showDefaultHUD: style != .raid
                 )
-                .ignoresSafeArea()
 
                 controlPanel
             }

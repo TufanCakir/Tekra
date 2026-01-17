@@ -127,51 +127,58 @@ struct StoryBattleView: View {
     }
 
     // MARK: - VICTORY
-    private func resolveVictory() {
-        print("🏁 resolveVictory() starting…")
-        if let progress = engine.progress {
+        private func resolveVictory() {
+            print("🏁 resolveVictory() starting…")
+            if let progress = engine.progress {
+                print(
+                    "📒 Progress exists. Completed stages before: \(progress.completedStages)"
+                )
+            } else {
+                print("⚠️ No progress object found on engine!")
+            }
+            engine.progress?.completeStage(stage.id)
+            print("✅ Marked stage as complete: \(stage.id) \"\(stage.title)\"")
+
+            let unlockIDOpt = stage.unlocksCharacter
+            print("🔎 Stage unlock candidate: \(String(describing: unlockIDOpt))")
+
+            guard let unlockID = unlockIDOpt else {
+                print("ℹ️ Stage has no unlocksCharacter set. Exiting battle.")
+                exitBattle()
+                return
+            }
+            
+            // 🔐 Prüfen ob bereits unlocked
+            if engine.progress?.unlockedCharacters.contains(unlockID) == true {
+                print("ℹ️ Character \(unlockID) already unlocked – skipping unlock overlay")
+                exitBattle()
+                return
+            }
+
+            guard
+                let fighter = FighterRegistry.playableCharacters.first(where: {
+                    $0.id == unlockID
+                })
+            else {
+                print(
+                    "❌ Fighter with id \(unlockID) not found in FighterRegistry.playableCharacters"
+                )
+                exitBattle()
+                return
+            }
+
             print(
-                "📒 Progress exists. Completed stages before: \(progress.completedStages)"
+                "🗝️ Attempting to unlock fighter id=\(unlockID) name=\(fighter.name)"
             )
-        } else {
-            print("⚠️ No progress object found on engine!")
-        }
-        engine.progress?.completeStage(stage.id)
-        print("✅ Marked stage as complete: \(stage.id) \"\(stage.title)\"")
-
-        let unlockIDOpt = stage.unlocksCharacter
-        print("🔎 Stage unlock candidate: \(String(describing: unlockIDOpt))")
-
-        guard let unlockID = unlockIDOpt else {
-            print("ℹ️ Stage has no unlocksCharacter set. Exiting battle.")
-            exitBattle()
-            return
-        }
-
-        guard
-            let fighter = FighterRegistry.playableCharacters.first(where: {
-                $0.id == unlockID
-            })
-        else {
+            engine.unlockCharacterAndSave(unlockID)
             print(
-                "❌ Fighter with id \(unlockID) not found in FighterRegistry.playableCharacters"
+                "📦 Engine progress unlocked now: \(engine.progress?.unlockedCharacters ?? [])"
             )
-            exitBattle()
-            return
+
+            unlockedFighter = fighter
+            engine.storyBattleState = .unlocking
+            print("🎆 Set battleState to .unlocking and stored unlockedFighter")
         }
-
-        print(
-            "🗝️ Attempting to unlock fighter id=\(unlockID) name=\(fighter.name)"
-        )
-        engine.unlockCharacterAndSave(unlockID)
-        print(
-            "📦 Engine progress unlocked now: \(engine.progress?.unlockedCharacters ?? [])"
-        )
-
-        unlockedFighter = fighter
-        engine.storyBattleState = .unlocking
-        print("🎆 Set battleState to .unlocking and stored unlockedFighter")
-    }
 
     // MARK: - BRIEFING VIEW
     private var briefingView: some View {

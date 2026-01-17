@@ -1,35 +1,5 @@
 [
     {
-        "id": "ice_warrior",
-        "name": "Ice Warrior",
-        "imageName": "story_frozen_king",
-        "maxHP": 300,
-        "attackPower": 25,
-        "availablePoses": [
-            "idle",
-            "punch",
-            "kick",
-        ],
-        "cardOwners": [
-            "ice_warrior"
-        ]
-    },
-    {
-        "id": "axel",
-        "name": "Axel",
-        "imageName": "axel",
-        "maxHP": 300,
-        "attackPower": 15,
-        "availablePoses": [
-            "idle",
-            "punch",
-            "kick",
-        ],
-        "cardOwners": [
-            "axel"
-        ]
-    },
-    {
         "id": "sly",
         "name": "Sly",
         "imageName": "sly",

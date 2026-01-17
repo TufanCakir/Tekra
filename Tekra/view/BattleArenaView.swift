@@ -30,7 +30,7 @@ struct BattleArenaView: View {
         static let timerFontFactor: CGFloat = 0.06
         static let hitSparkRadiusFactor: CGFloat = 0.1
         static let hitSparkWidthFactor: CGFloat = 0.2
-        static let backgroundYOffsetFactor: CGFloat = 0.1
+        static let backgroundYOffsetFactor: CGFloat = 0.0
         static let parallaxFactor: CGFloat = 0.1
         static let shadowBlur: CGFloat = 3
         static let fighterShadowRadiusFactor: CGFloat = 0.3
@@ -105,7 +105,7 @@ struct BattleArenaView: View {
                 )
                 .offset(
                     x: -size.width * Layout.playerXOffsetFactor + engine.p1X,
-                    y: groundY
+                    y: groundY - size.height * 0.06  // 👈 DAS ist der Trick
                 )
             }
 
@@ -117,7 +117,10 @@ struct BattleArenaView: View {
                     size: size
                 )
                 .scaleEffect(x: -1, y: 1)
-                .offset(x: size.width * Layout.enemyXOffsetFactor, y: groundY)
+                .offset(
+                    x: size.width * Layout.enemyXOffsetFactor,
+                    y: groundY - size.height * 0.06
+                )
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)

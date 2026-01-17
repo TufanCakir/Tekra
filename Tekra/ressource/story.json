@@ -32,21 +32,7 @@
                         "elite",
                         "boss"
                     ],
-                    "unlocksCharacter": "ice_warrior"
-                },
-                {
-                    "id": "c1_boss_boss",
-                    "title": "Frozen King",
-                    "enemy": "story_frozen_king",
-                    "baseHP": 420,
-                    "baseAttack": 22,
-                    "boss": true,
-                    "difficulties": [
-                        "normal",
-                        "elite",
-                        "boss"
-                    ],
-                    "unlocksCharacter": "ice_warriorå"
+                    "unlocksCharacter": "axel"
                 }
             ]
         }
