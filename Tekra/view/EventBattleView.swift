@@ -47,6 +47,16 @@ struct EventBattleView: View {
                 }
             }
         }
+        .onChange(of: started) { oldValue, newValue in
+            if newValue {
+                print("🧪 EVENT MODE:", engine.currentMode)
+                print("🃏 HAND:", engine.hand.map { $0.id })
+            }
+        }
+        .onAppear {
+            print("🧪 EVENT MODE:", engine.currentMode)
+            print("🃏 HAND:", engine.hand.map { $0.id })
+        }
     }
 
     // MARK: - EVENT BRIEFING
@@ -108,8 +118,8 @@ struct EventBattleView: View {
 
             // Start Button
             Button {
-                engine.loadEvent(event)
-                started = true
+                engine.loadEvent(event)  // ⬅️ setzt Mode + Enemy + drawHand
+                started = true  // ⬅️ JETZT erst BattleView zeigen
             } label: {
                 Text("START EVENT")
                     .font(

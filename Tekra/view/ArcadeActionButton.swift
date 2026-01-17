@@ -11,6 +11,8 @@ struct ArcadeCardButton: View {
     let card: Card
     @Environment(GameEngine.self) private var engine
     let action: () -> Void
+    var isReady: Bool { engine.isCardReady(card) }
+    var progress: CGFloat { engine.cooldownProgress(for: card) }
 
     var body: some View {
         // Erzwingt Redraw für Cooldown
@@ -69,7 +71,7 @@ struct ArcadeCardButton: View {
 
                 Spacer(minLength: 6)
 
-                Image(card.actionImage)
+                Image(card.iconName)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 48, height: 48)
@@ -110,37 +112,4 @@ struct ArcadeCardButton: View {
             action()
         }
     }
-}
-
-#Preview {
-    let engine = GameEngine()
-    // Dummy Karten für die Vorschau
-    let dummyPunch = Card(
-        id: "1",
-        title: "PUNCH",
-        actionImage: "sly_punch",
-        damage: 10,
-        type: .punch,
-        colorHex: "#3498db",
-        cooldown: 2.0
-    )
-    let dummyKick = Card(
-        id: "2",
-        title: "KICK",
-        actionImage: "sly_kick",
-        damage: 20,
-        type: .kick,
-        colorHex: "#e74c3c",
-        cooldown: 3.0
-    )
-
-    return HStack {
-        ArcadeCardButton(card: dummyPunch) {
-            print("Punch!")
-        }
-        ArcadeCardButton(card: dummyKick) {
-            print("Kick!")
-        }
-    }
-    .environment(engine)
 }

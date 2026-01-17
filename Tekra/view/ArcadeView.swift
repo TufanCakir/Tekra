@@ -62,10 +62,11 @@ struct ArcadeView: View {
 
             // Start Button
             Button {
-                guard
-                    let wave = FighterRegistry.currentArcadeWaves.first,
-                    engine.currentPlayer != nil
-                else { return }
+                guard engine.currentPlayer != nil else { return }
+                guard let wave = FighterRegistry.currentArcadeWaves.first else {
+                    print("❌ No Arcade Waves available")
+                    return
+                }
 
                 engine.startArcade(wave: wave)
                 started = true

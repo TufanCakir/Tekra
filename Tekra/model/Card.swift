@@ -8,20 +8,23 @@
 import Foundation
 import SwiftUI
 
-struct Card: Identifiable, Codable, Equatable {
+struct Card: Identifiable, Codable, Equatable, Hashable {
     let id: String
     let title: String
-    let actionImage: String
     let damage: CGFloat
     let type: CardType
     let colorHex: String
     let cooldown: Double
+    let owner: String
+    let iconName: String
+    let poseName: String
 
     // lastUsed wird ignoriert (CodingKeys), aber wir können es im init initialisieren
     var lastUsed: Date = .distantPast
 
     enum CodingKeys: String, CodingKey {
-        case id, title, actionImage, damage, type, colorHex, cooldown
+        case id, title, damage, type, colorHex, cooldown, owner, iconName,
+            poseName
     }
 
     // Direktzugriff auf Farbe (bereits gut, aber hier sicherheitshalber mit Fallback)
@@ -30,7 +33,10 @@ struct Card: Identifiable, Codable, Equatable {
     }
 
     enum CardType: String, Codable {
-        case punch, kick, special, run
+        case punch
+        case kick
+        case special
+        case run
 
         // Verhindert Crash, falls ein unbekannter Typ im JSON steht
         init(from decoder: Decoder) throws {

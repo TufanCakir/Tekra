@@ -38,12 +38,6 @@ struct StageSelection: Identifiable, Hashable {
     let difficulty: StoryDifficulty
 }
 
-enum StoryBattleState {
-    case briefing
-    case fighting
-    case unlocking
-}
-
 struct StoryEnemy {
     let id: String  // story_frozen_king
     let name: String
@@ -54,16 +48,17 @@ struct StoryEnemy {
 
 extension StoryStage {
 
-    func makeEnemy(
-        difficulty: StoryDifficulty
-    ) -> Fighter {
-
+    func makeEnemy(difficulty: StoryDifficulty) -> Fighter {
         Fighter(
-            id: "story_\(enemy)_\(difficulty.rawValue)",
+            id: enemy,  // 👈 STABIL
             name: title,
-            imageName: enemy,  // Asset-Name, NICHT Registry
+            imageName: enemy,
             maxHP: baseHP * difficulty.hpMultiplier,
-            attackPower: baseAttack * difficulty.damageMultiplier
+            attackPower: baseAttack * difficulty.damageMultiplier,
+            availablePoses: boss == true
+                ? ["idle", "punch", "kick", "special"]
+                : ["idle", "punch", "kick"],
+            cardOwners: [id, "boss", "generic"]  // ✅ FIX
         )
     }
 }

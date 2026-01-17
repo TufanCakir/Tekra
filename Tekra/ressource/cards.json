@@ -2,28 +2,67 @@
     {
         "id": "p1",
         "title": "LIGHT PUNCH",
-        "actionImage": "sly_punch",
-        "damage": 15,
         "type": "punch",
-        "colorHex": "#3498db",
-        "cooldown": 0.8
+        "iconName": "sly_punch",
+        "poseName": "punch",
+        "damage": 15,
+        "cooldown": 0.8,
+        "owner": "sly",
+        "colorHex": "#E74C3C"
     },
     {
         "id": "k1",
-        "title": "HEAVY KICK",
-        "actionImage": "sly_kick",
-        "damage": 30,
+        "title": "LIGHT KICK",
         "type": "kick",
-        "colorHex": "#e74c3c",
-        "cooldown": 2.5
+        "iconName": "sly_kick",
+        "poseName": "kick",
+        "damage": 15,
+        "cooldown": 0.8,
+        "owner": "sly",
+        "colorHex": "#C0392B"
     },
     {
-        "id": "s1",
-        "title": "SPECIAL",
-        "actionImage": "sly_special",
-        "damage": 50,
-        "type": "special",
-        "colorHex": "#9b59b6",
-        "cooldown": 6.0
+        "id": "p2",
+        "title": "LIGHT PUNCH",
+        "type": "punch",
+        "iconName": "story_frozen_king_punch",
+        "poseName": "punch",
+        "damage": 15,
+        "cooldown": 0.8,
+        "owner": "ice_warrior",
+        "colorHex": "#5DADE2"
+    },
+    {
+        "id": "k2",
+        "title": "LIGHT KICK",
+        "type": "kick",
+        "iconName": "story_frozen_king_kick",
+        "poseName": "kick",
+        "damage": 15,
+        "cooldown": 0.8,
+        "owner": "ice_warrior",
+        "colorHex": "#85C1E9"
+    },
+    {
+        "id": "p3",
+        "title": "LIGHT PUNCH",
+        "type": "punch",
+        "iconName": "axel_punch",
+        "poseName": "punch",
+        "damage": 15,
+        "cooldown": 0.8,
+        "owner": "axel",
+        "colorHex": "#5DADE2"
+    },
+    {
+        "id": "k3",
+        "title": "LIGHT KICK",
+        "type": "kick",
+        "iconName": "axel_kick",
+        "poseName": "kick",
+        "damage": 15,
+        "cooldown": 0.8,
+        "owner": "axel",
+        "colorHex": "#85C1E9"
     }
 ]

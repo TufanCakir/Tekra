@@ -15,7 +15,7 @@ struct StoryBattleView: View {
     let stage: StoryStage
     let difficulty: StoryDifficulty
 
-    @State private var battleState: StoryBattleState = .briefing
+    private var battleState: StoryBattleState { engine.storyBattleState }
     @State private var unlockedFighter: Fighter?
 
     // MARK: - Accent
@@ -30,7 +30,9 @@ struct StoryBattleView: View {
             // =========================
             // FIGHT VIEW
             // =========================
-            if battleState == .fighting || battleState == .unlocking {
+            if battleState == StoryBattleState.fighting
+                || battleState == StoryBattleState.unlocking
+            {
                 BattleContainerView(
                     style: .arcade,
                     onExit: {
@@ -50,7 +52,7 @@ struct StoryBattleView: View {
             // =========================
             // BRIEFING
             // =========================
-            if battleState == .briefing {
+            if battleState == StoryBattleState.briefing {
                 briefingView
                     .transition(.opacity.combined(with: .scale))
             }
@@ -58,7 +60,9 @@ struct StoryBattleView: View {
             // =========================
             // UNLOCK OVERLAY
             // =========================
-            if battleState == .unlocking, let fighter = unlockedFighter {
+            if battleState == StoryBattleState.unlocking,
+                let fighter = unlockedFighter
+            {
                 unlockOverlay(fighter)
             }
         }
@@ -80,6 +84,9 @@ struct StoryBattleView: View {
             print(
                 "🎯 Initial state: battleState=\(battleState), cleared=\(engine.isLevelCleared)"
             )
+        }
+        .onAppear {
+            print("🃏 EVENT HAND:", engine.hand.map { $0.id })
         }
     }
 
@@ -112,7 +119,7 @@ struct StoryBattleView: View {
             "🟢 handleLevelCleared called. cleared=\(cleared), battleState=\(battleState)"
         )
         guard cleared else { return }
-        guard battleState == .fighting else {
+        guard battleState == StoryBattleState.fighting else {
             print("⏭️ Ignoring levelCleared because state is not .fighting")
             return
         }
@@ -162,7 +169,7 @@ struct StoryBattleView: View {
         )
 
         unlockedFighter = fighter
-        battleState = .unlocking
+        engine.storyBattleState = .unlocking
         print("🎆 Set battleState to .unlocking and stored unlockedFighter")
     }
 
@@ -231,47 +238,29 @@ struct StoryBattleView: View {
     // MARK: - START
     private func startBattle() {
         print("🚀 startBattle()")
-        engine.resetBattle()
-        print("🧹 Engine resetBattle done.")
+
+        engine.softResetBattle()
+        engine.storyBattleState = .fighting
 
         let enemy = stage.makeEnemy(difficulty: difficulty)
-        print(
-            "👾 Created enemy: name=\(enemy.name), hp=\(enemy.maxHP), atk=\(enemy.attackPower), image=\(enemy.imageName)"
-        )
-
-        let waveID = Int.random(in: 1000...9999)
-        let enemyID = Int.random(in: 10000...99999)
-        print("🌊 Starting arcade wave id=\(waveID) enemyID=\(enemyID)")
         engine.startArcade(
-            wave: ArcadeWave(
-                id: waveID,
-                title: stage.title,
-                rounds: [
-                    [
-                        ArcadeEnemy(
-                            id: enemyID,
-                            name: enemy.name,
-                            image: enemy.imageName,
-                            maxHP: Double(enemy.maxHP),
-                            attack: Int(enemy.attackPower)
-                        )
-                    ]
-                ]
+            wave: ArcadeWave.storySingleEnemy(
+                fighter: enemy,
+                hpMultiplier: difficulty.hpMultiplier,
+                damageMultiplier: difficulty.damageMultiplier
             )
         )
-
-        battleState = .fighting
-        print("⚔️ battleState -> .fighting")
     }
 
     // MARK: - EXIT
     private func exitBattle() {
+        engine.storyBattleState = .briefing
+        engine.hardResetBattle()
+        dismiss()
         print("🚪 exitBattle() called. Dismissing after cleanup…")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             print("🧨 hardResetBattle() now…")
-            engine.hardResetBattle()
             print("⬇️ dismiss()")
-            dismiss()
         }
     }
 }

@@ -4,22 +4,29 @@
 //
 //  Created by Tufan Cakir on 16.01.26.
 //
-
 import Foundation
 
 @MainActor
 enum FighterRegistry {
 
+    // MARK: - State
+    private static var isLoaded = false  // 🔐 DAS FEHLTE
+
     // MARK: - Speicher
     private(set) static var currentRaidBosses: [String: RaidBoss] = [:]
     private(set) static var currentArcadeWaves: [ArcadeWave] = []
     private(set) static var playableCharacters: [Fighter] = []
-
-    /// ✅ Zentrale Enemy-Liste (Story / Arcade / Raid)
     private(set) static var allEnemies: [Fighter] = []
 
-    // MARK: - Ladevorgang
+    // MARK: - Load
     static func loadAll() {
+        guard !isLoaded else {
+            print("ℹ️ FighterRegistry: already loaded – skip")
+            return
+        }
+
+        isLoaded = true
+        print("🔄 FighterRegistry: Initial Load")
 
         // 1. Raid Bosse
         let raids = RaidLoader.load()
@@ -30,10 +37,10 @@ enum FighterRegistry {
         // 2. Arcade Waves
         currentArcadeWaves = ArcadeLoader.load()
 
-        // 3. Spielbare Charaktere
+        // 3. Spieler
         playableCharacters = FighterLoader.load(file: "players")
 
-        // 4. Enemy-Registry bauen
+        // 4. Enemy-Registry
         buildEnemyRegistry()
 
         print(
@@ -48,26 +55,24 @@ enum FighterRegistry {
     }
 
     // MARK: - Enemy Registry Builder
-
     private static func buildEnemyRegistry() {
-
         var enemies: [Fighter] = []
 
-        // A) Arcade-Gegner
+        // Arcade Enemies registrieren
         for wave in currentArcadeWaves {
             for round in wave.rounds {
-                for arcadeEnemy in round {
-                    enemies.append(arcadeEnemy.toFighter())
+                for enemy in round {
+                    enemies.append(enemy.fighter)
                 }
             }
         }
 
-        // B) Raid-Bosse
+        // Raid
         for boss in currentRaidBosses.values {
-            enemies.append(boss.toFighter())
+            enemies.append(boss.makeFighter())
         }
 
-        // C) Duplikate entfernen
+        // Duplikate entfernen
         allEnemies = Array(
             Dictionary(grouping: enemies, by: { $0.id })
                 .values
@@ -75,23 +80,19 @@ enum FighterRegistry {
         )
     }
 
-    // MARK: - Lookups (Story / Combat)
-
-    /// Gegner für Story / Arcade / Raid
+    // MARK: - Lookups
     static func enemy(id: String) -> Fighter? {
-        if allEnemies.isEmpty { loadAll() }
+        loadAll()
         return allEnemies.first(where: { $0.id == id })
     }
 
-    /// Spielbarer Charakter
     static func player(id: String) -> Fighter? {
-        if playableCharacters.isEmpty { loadAll() }
+        loadAll()
         return playableCharacters.first(where: { $0.id == id })
     }
 
-    /// Raid-Boss
     static func raidBoss(id: String) -> RaidBoss? {
-        if currentRaidBosses.isEmpty { loadAll() }
+        loadAll()
         return currentRaidBosses[id]
     }
 }

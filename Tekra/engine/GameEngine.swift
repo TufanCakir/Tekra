@@ -19,6 +19,12 @@ enum GameMode {
     case arcade, raid, event
 }
 
+enum StoryBattleState {
+    case briefing
+    case fighting
+    case unlocking
+}
+
 @Observable @MainActor
 class GameEngine {
     private let combatSystem = CombatSystem()
@@ -27,10 +33,12 @@ class GameEngine {
     private let effectSystem = EffectSystem()
     private let turnSystem = TurnSystem()
     private let enemyAI = EnemyAI()
+    var storyBattleState: StoryBattleState = .briefing
 
     var enemyScale: CGFloat { effectSystem.enemyScale }
     var shakeOffset: CGFloat { effectSystem.shakeOffset }
     var isFrozen: Bool { effectSystem.isFrozen }
+    private var allowedCards: [Card] = []
 
     // MARK: - Properties
     var currentMode: GameMode = .event
@@ -40,6 +48,7 @@ class GameEngine {
     var allCards: [Card] = []
     var hand: [Card] = []
     var currentPose = "idle"
+    var enemyPose: String = "idle"
 
     private(set) var gameTime: Double = 0
     var lastUIUpdateTime: Double = 0
@@ -80,6 +89,36 @@ class GameEngine {
         self.modeController = ModeController(engine: self)
     }
 
+    func spriteName(for fighter: Fighter, pose: String) -> String {
+        // 1. Ungültige Posen abfangen
+        let resolvedPose: String
+        if fighter.availablePoses.contains(pose) {
+            resolvedPose = pose
+        } else {
+            resolvedPose = "idle"
+        }
+
+        // 2. Base-Name
+        let base = fighter.imageName
+
+        // 3. Sprite-Kandidat
+        let candidate = "\(base)_\(resolvedPose)"
+
+        if UIImage(named: candidate) != nil {
+            return candidate
+        }
+
+        // 4. Finaler Fallback (NUR EINMAL idle)
+        let idle = "\(base)_idle"
+        if UIImage(named: idle) != nil {
+            return idle
+        }
+
+        // 5. Hard fallback (damit nichts crasht)
+        print("🧩 Missing asset:", candidate)
+        return base
+    }
+
     // WICHTIG: Diese Methode wird gerufen, wenn du im Menü einen Helden anklickst
     func selectPlayer(_ fighter: Fighter) {
         currentPlayer = fighter
@@ -108,49 +147,93 @@ class GameEngine {
         modeController.nextArcadeRound()
     }
 
-    private func applyMatchSettings(
-        player: Fighter? = nil,
+    func applyMatchSettings(
         enemy: Fighter,
         background: String
     ) {
-        // ⬇️ HIER rein
-        enemyAI.configurePattern(for: enemy)
-
-        if let player = player {
-            self.currentPlayer = player
+        guard let player = currentPlayer else {
+            print("❌ No current player set!")
+            return
         }
 
+        enemyAI.configurePattern(for: enemy)
+
         self.currentEnemy = enemy
-        self.playerHP = self.currentPlayer?.maxHP ?? 100
+        self.playerHP = player.maxHP
         self.enemyHP = enemy.maxHP
         self.currentBackground = background
 
-        // Reset State
-        self.isLevelCleared = false
-        self.isPerformingAction = false
-        self.currentPose = "idle"
-        self.p1X = 0
-        self.hand = Array(allCards.shuffled().prefix(3))
+        isLevelCleared = false
+        isPerformingAction = false
+        currentPose = "idle"
+        enemyPose = "idle"
+        p1X = 0
+
+        drawHand()  // ✅ jetzt garantiert mit richtigem Player
+    }
+
+    func drawHand() {
+        print("🃏 drawHand() called")
+
+        guard let player = currentPlayer else {
+            print("❌ drawHand: currentPlayer == nil")
+            return
+        }
+
+        print("👤 Player:", player.id)
+        print("👤 Player cardOwners:", player.cardOwners)
+
+        print("📦 All cards loaded:", allCards.count)
+        print("📦 All card owners:", Set(allCards.map { $0.owner }))
+
+        allowedCards = allCards.filter { card in
+            let allowed = player.cardOwners.contains(card.owner)
+            if allowed {
+                print("✅ Card allowed:", card.id, "owner:", card.owner)
+            }
+            return allowed
+        }
+
+        if allowedCards.isEmpty {
+            print(
+                """
+                ⚠️ NO ALLOWED CARDS FOUND
+                Player owners: \(player.cardOwners)
+                Card owners: \(Set(allCards.map { $0.owner }))
+                Applying GENERIC fallback
+                """
+            )
+
+            allowedCards = allCards.filter { card in
+                player.cardOwners.contains(card.owner)
+                    || (currentMode == .event && card.owner == "generic")
+            }
+            print("🔁 Generic fallback cards:", allowedCards.map { $0.id })
+        }
+
+        hand = Array(
+            Array(Set(allowedCards))  // 🔑 deduplizieren
+                .shuffled()
+                .prefix(3)
+        )
+        print("🖐 Final hand:", hand.map { $0.id })
     }
 
     func loadArcadeRound(index: Int) {
         guard let wave = currentWave, wave.rounds.indices.contains(index) else {
-            print("🏁 Welle komplett abgeschlossen!")
-            self.isLevelCleared = true
+            isLevelCleared = true
             return
         }
 
-        // Wir nehmen den Gegner der aktuellen Runde
         if let enemyData = wave.rounds[index].first {
-            let arcadeFighter = enemyData.toFighter()
+            let arcadeFighter = enemyData.fighter
 
-            // Reset der Arena-Werte (Hintergrund bleibt, kann bei Bedarf pro Wave/Runde erweitert werden)
-            self.applyMatchSettings(
+            applyMatchSettings(
                 enemy: arcadeFighter,
-                background: self.currentBackground
+                background: currentBackground
             )
-            self.currentRoundIndex = index
 
+            currentRoundIndex = index
             print("🕹 Lade Runde \(index + 1): \(arcadeFighter.name)")
         }
     }
@@ -258,20 +341,20 @@ class GameEngine {
     private func runAttackSequence(_ card: Card) {
         currentPose = "windup"
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-            self.currentPose = card.type.rawValue
+
+            self.currentPose = card.poseName
+
             self.triggerHitEffects(damage: card.damage, toEnemy: true)
+
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
                 withAnimation(.easeOut(duration: 0.2)) {
                     self.currentPose = "idle"
                     self.isPerformingAction = false
                 }
-            }
-            // Optional: simple counter-attack logic based on card type cooldown to demonstrate dynamic damage flow
-            DispatchQueue.main.asyncAfter(
-                deadline: .now() + max(0.4, card.cooldown * 0.5)
-            ) {
-                guard !self.isLevelCleared, self.enemyHP > 0 else {
-                    self.turnSystem.startPlayerTurn()  // 🔥 WICHTIG
+
+                // 👹 ENEMY TURN STARTEN
+                guard !self.isLevelCleared else {
+                    self.turnSystem.startPlayerTurn()
                     return
                 }
 
@@ -289,30 +372,37 @@ class GameEngine {
             playerHP: playerHP
         )
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        enemyPose = "windup"
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+
             switch action {
 
-            case .basicAttack(let multiplier):
+            case .basicAttack:
+                self.enemyPose = "punch"
                 self.triggerHitEffects(
-                    damage: enemy.attackPower * multiplier,
+                    damage: enemy.attackPower,
                     toEnemy: false
                 )
 
             case .heavyAttack:
+                self.enemyPose = "kick"
                 self.triggerHitEffects(
                     damage: enemy.attackPower * 1.6,
                     toEnemy: false
                 )
 
-            case .wait:
-                break
-
             case .enrage:
-                // später: Buff-System
-                break
+                self.enemyPose = "special"
+
+            case .wait:
+                self.enemyPose = "idle"
             }
 
-            self.turnSystem.startPlayerTurn()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                self.enemyPose = "idle"
+                self.turnSystem.startPlayerTurn()
+            }
         }
     }
 
@@ -320,12 +410,18 @@ class GameEngine {
         guard let index = hand.firstIndex(where: { $0.id == card.id }) else {
             return
         }
+
+        let existingIDs = Set(hand.map { $0.id })
+        let pool = allowedCards.filter { !existingIDs.contains($0.id) }
+
+        // 🔒 WICHTIG: Kein Ersatz möglich → einfach drin lassen
+        guard let replacement = pool.randomElement() else {
+            print("⚠️ No unique replacement available – keeping hand")
+            return
+        }
+
         withAnimation(.spring()) {
-            hand.remove(at: index)
-            let pool = allCards.filter { c in
-                !hand.contains(where: { $0.id == c.id })
-            }
-            hand.insert(pool.randomElement() ?? allCards[0], at: index)
+            hand[index] = replacement
         }
     }
 
@@ -336,7 +432,6 @@ class GameEngine {
 
     @objc private func updateLoop(_ link: CADisplayLink) {
         gameTime += link.duration
-        lastUIUpdateTime = gameTime
     }
 
     func setupDatabase(context: ModelContext, playerProgress: PlayerProgress) {

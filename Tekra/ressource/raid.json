@@ -5,7 +5,13 @@
         "imageName": "story_frozen_king",
         "maxHP": 1500,
         "attackPower": 45,
-        "raidBackground": "skybox"
+        "raidBackground": "skybox",
+        "availablePoses": [
+            "idle",
+            "punch",
+            "kick",
+            "special"
+        ]
     },
     {
         "id": "void_reaper",
@@ -13,6 +19,12 @@
         "imageName": "story_frozen_king",
         "maxHP": 2500,
         "attackPower": 60,
-        "raidBackground": "skybox"
+        "raidBackground": "skybox",
+        "availablePoses": [
+            "idle",
+            "punch",
+            "kick",
+            "special"
+        ]
     }
 ]

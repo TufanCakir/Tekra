@@ -5,80 +5,95 @@
 //  Created by Tufan Cakir on 15.01.26.
 //
 
+import CoreGraphics
 import Foundation
 
-struct ArcadeWave: Codable, Identifiable {
+struct ArcadeWave: Identifiable {
     let id: Int
     let title: String
-    let rounds: [[ArcadeEnemy]]  // Ein Array von Runden, jede Runde hat ein Array von Gegnern
+    let rounds: [[ArcadeEnemy]]
 }
 
-struct ArcadeEnemy: Codable {
+struct ArcadeEnemy: Identifiable, Codable {
     let id: Int
+    let enemyID: String
     let name: String
     let image: String
-    let maxHP: Double
-    let attack: Int
+    let maxHP: CGFloat
+    let attack: CGFloat
+    let hpMultiplier: CGFloat
+    let damageMultiplier: CGFloat
 
-    // Wandelt den Arcade-Eintrag in das Standard-Fighter-Modell um
-    func toFighter() -> Fighter {
+    // Derived fighter built from this enemy's base stats and multipliers
+    var fighter: Fighter {
         Fighter(
-            id: "arcade_\(id)",
+            id: enemyID,
             name: name,
             imageName: image,
-            maxHP: CGFloat(maxHP),
-            attackPower: CGFloat(attack)
+            maxHP: maxHP * hpMultiplier,
+            attackPower: attack * damageMultiplier,
+            availablePoses: ["idle", "punch", "kick", "special"],
+            cardOwners: ["generic"]
         )
     }
 }
 
-struct ArcadeResponse: Codable {
-    let waves: [ArcadeWave]
+struct ArcadeWaveDTO: Codable {
+    let id: Int
+    let title: String
+    let rounds: [[ArcadeEnemyDTO]]
 }
-/// Story-Hilfswave mit genau einem Gegner
+
+struct ArcadeEnemyDTO: Codable {
+    let enemyID: String
+    let name: String
+    let image: String
+    let baseHP: CGFloat
+    let baseAttack: CGFloat
+    let hpMultiplier: CGFloat
+    let damageMultiplier: CGFloat
+}
+
 extension ArcadeWave {
 
-    /// Story-Hilfswave mit genau einem Gegner
-    /// - Parameters:
-    ///   - enemyID: ID aus Story / Registry
-    ///   - hpMultiplier: Skalierung der Lebenspunkte (z. B. 1.5 für Boss)
-    ///   - damageMultiplier: Skalierung des Schadens
-    static func singleEnemy(
-        _ enemyID: String,
-        hpMultiplier: CGFloat = 1.0,
-        damageMultiplier: CGFloat = 1.0
+    /// Story-Hilfswave (1 Gegner, 1 Runde)
+    static func storySingleEnemy(
+        fighter: Fighter,
+        hpMultiplier: CGFloat,
+        damageMultiplier: CGFloat
     ) -> ArcadeWave {
 
-        let enemy =
-            FighterRegistry.enemy(id: enemyID)
-            ?? Fighter(
-                id: "fallback",
-                name: "UNKNOWN",
-                imageName: "unknown_enemy",
-                maxHP: 50,
-                attackPower: 5
-            )
+        let scaledFighter = Fighter(
+            id: fighter.id,
+            name: fighter.name,
+            imageName: fighter.imageName,
+            maxHP: fighter.maxHP * hpMultiplier,
+            attackPower: fighter.attackPower * damageMultiplier,
+            availablePoses: fighter.availablePoses,
+            cardOwners: []
+        )
 
-        let scaledHP = max(1, enemy.maxHP * hpMultiplier)
-        let scaledAttack = max(1, enemy.attackPower * damageMultiplier)
-
-        let arcadeEnemy = ArcadeEnemy(
+        let enemy = ArcadeEnemy(
             id: Int.random(in: 10_000...99_999),
-            name: enemy.name,
-            image: enemy.imageName,
-            maxHP: Double(scaledHP),
-            attack: Int(scaledAttack)
+            enemyID: scaledFighter.id,
+            name: scaledFighter.name,
+            image: scaledFighter.imageName,
+            maxHP: scaledFighter.maxHP,
+            attack: scaledFighter.attackPower,
+            hpMultiplier: 1.0,
+            damageMultiplier: 1.0
         )
 
         return ArcadeWave(
-            id: Int.random(in: 1000...9999),
+            id: Int.random(in: 1_000...9_999),
             title: "Story Battle",
-            rounds: [[arcadeEnemy]]
+            rounds: [[enemy]]
         )
     }
 }
 
 enum ArcadeLoader {
+
     static func load() -> [ArcadeWave] {
         guard
             let url = Bundle.main.url(
@@ -87,16 +102,63 @@ enum ArcadeLoader {
             ),
             let data = try? Data(contentsOf: url)
         else {
-            print("❌ arcade.json nicht gefunden oder lesbar")
+            print("❌ arcade.json nicht gefunden")
             return []
         }
 
         do {
-            // Falls dein JSON direkt ein Array ist, nutzt man [ArcadeWave].self
-            // Da dein JSON mit [ beginnt, ist es ein direktes Array:
-            return try JSONDecoder().decode([ArcadeWave].self, from: data)
+            let dtoWaves = try JSONDecoder().decode(
+                [ArcadeWaveDTO].self,
+                from: data
+            )
+
+            return dtoWaves.map { dto in
+                // Build rounds by transforming each DTO enemy into an ArcadeEnemy using registry base stats
+                let rounds: [[ArcadeEnemy]] = dto.rounds.map { round in
+                    round.map { enemyDTO in
+                        // Get base fighter from registry or fallback
+                        let base =
+                            FighterRegistry.enemy(id: enemyDTO.enemyID)
+                            ?? Fighter(
+                                id: "fallback",
+                                name: "UNKNOWN",
+                                imageName: "unknown_enemy",
+                                maxHP: 50,
+                                attackPower: 10,
+                                availablePoses: ["idle"],
+                                cardOwners: []
+                            )
+
+                        // Apply multipliers from DTO to base stats
+                        let scaledMaxHP =
+                            enemyDTO.baseHP * enemyDTO.hpMultiplier
+                        let scaledAttack =
+                            enemyDTO.baseAttack * enemyDTO.damageMultiplier
+
+                        return ArcadeEnemy(
+                            id: Int.random(in: 10_000...99_999),
+                            enemyID: enemyDTO.enemyID,
+                            name: enemyDTO.name.isEmpty
+                                ? base.name : enemyDTO.name,
+                            image: enemyDTO.image.isEmpty
+                                ? base.imageName : enemyDTO.image,
+                            maxHP: scaledMaxHP,
+                            attack: scaledAttack,
+                            hpMultiplier: 1.0,
+                            damageMultiplier: 1.0
+                        )
+                    }
+                }
+
+                return ArcadeWave(
+                    id: dto.id,
+                    title: dto.title,
+                    rounds: rounds
+                )
+            }
+
         } catch {
-            print("❌ Arcade Decode Fehler: \(error)")
+            print("❌ Arcade Decode Fehler:", error)
             return []
         }
     }

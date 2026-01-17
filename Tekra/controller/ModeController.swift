@@ -43,12 +43,8 @@ final class ModeController {
             return
         }
 
-        let enemy = enemyData.toFighter()
-
-        applyMatchSettings(
-            enemy: enemy,
-            background: engine.currentBackground
-        )
+        let enemy = enemyData.fighter
+        applyMatchSettings(enemy: enemy, background: engine.currentBackground)
 
         engine.currentRoundIndex = index
         print("🕹 Arcade Runde \(index + 1): \(enemy.name)")
@@ -63,52 +59,66 @@ final class ModeController {
 
         if let boss = FighterRegistry.raidBoss(id: bossID) {
             applyMatchSettings(
-                enemy: boss.toFighter(),
+                enemy: boss.makeFighter(),
                 background: boss.raidBackground
             )
         }
     }
 
     // MARK: - Event
-
     func startEvent(_ event: GameEvent) {
         guard let engine else { return }
 
         engine.currentMode = .event
 
-        if let enemyID = event.enemies.first {
-            let enemy = Fighter(
-                id: event.id,
-                name: event.title,
-                imageName: enemyID,
-                maxHP: 100,
-                attackPower: 20
-            )
+        // 🔑 FALLBACK PLAYER
+        if engine.currentPlayer == nil {
+            engine.currentPlayer = FighterRegistry.playableCharacters.first
+        }
 
-            applyMatchSettings(
+        // 🔥 STORY ENEMY DIREKT ERZEUGEN
+        if let enemyID = event.enemies.first {
+
+            let enemy: Fighter
+
+            if let registryEnemy = FighterRegistry.enemy(id: enemyID) {
+                enemy = registryEnemy
+            } else {
+                // 🔥 STORY FALLBACK
+                enemy = Fighter(
+                    id: enemyID,
+                    name: "Event Enemy",
+                    imageName: enemyID,
+                    maxHP: 120,
+                    attackPower: 18,
+                    availablePoses: ["idle", "punch", "kick", "special"],
+                    cardOwners: ["generic"]
+                )
+                print("🧪 Event fallback enemy created:", enemyID)
+            }
+
+            engine.applyMatchSettings(
                 enemy: enemy,
                 background: event.background
             )
         }
+
+        engine.drawHand()
     }
 
     // MARK: - Shared
-
     private func applyMatchSettings(
         enemy: Fighter,
         background: String
     ) {
-        guard let engine else { return }
+        guard let engine else {
+            print("❌ ModeController: engine is nil")
+            return
+        }
 
-        engine.currentEnemy = enemy
-        engine.enemyHP = enemy.maxHP
-        engine.playerHP = engine.currentPlayer?.maxHP ?? 100
-        engine.currentBackground = background
-
-        engine.isLevelCleared = false
-        engine.isPerformingAction = false
-        engine.currentPose = "idle"
-        engine.p1X = 0
-        engine.hand = Array(engine.allCards.shuffled().prefix(3))
+        engine.applyMatchSettings(
+            enemy: enemy,
+            background: background
+        )
     }
 }

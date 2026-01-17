@@ -112,7 +112,7 @@ struct BattleArenaView: View {
             if let enemy = engine.currentEnemy {
                 dynamicFighter(
                     fighter: enemy,
-                    pose: "idle",
+                    pose: engine.enemyPose,  // ✅ RICHTIG
                     isPlayer: false,
                     size: size
                 )
@@ -129,27 +129,21 @@ struct BattleArenaView: View {
         isPlayer: Bool,
         size: CGSize
     ) -> some View {
+
         let fighterHeight = size.height * Layout.fighterHeightFactor
+        let spriteName = engine.spriteName(for: fighter, pose: pose)
 
-        // Versuche 1: "sly_idle" (falls Animationen vorhanden)
-        // Versuche 2: "sly" (das Basis-Bild aus der JSON)
-        // Versuche 3: Ein System-Symbol (falls gar nichts gefunden wird)
-        let imageNameWithPose = "\(fighter.imageName)_\(pose)"
-        let baseImageName = fighter.imageName
-
-        let uiImage =
-            UIImage(named: imageNameWithPose) ?? UIImage(named: baseImageName)
-            ?? UIImage(systemName: "person.crop.rectangle.fill")
-
-        return Image(uiImage: uiImage!)
+        return Image(engine.spriteName(for: fighter, pose: pose))
             .resizable()
             .scaledToFit()
             .frame(height: fighterHeight)
-            // Dynamischer Schatten: Blau für Spieler, Rot für Gegner
             .shadow(
                 color: (isPlayer ? Color.blue : Color.red).opacity(0.4),
-                radius: engine.currentPlayer?.id == fighter.id ? 10 : 2
+                radius: isPlayer ? 10 : 2
             )
+            .id(spriteName)  // 🔥 WICHTIG: erzwingt Pose-Refresh
+            .transition(.opacity)
+            .animation(.easeOut(duration: 0.15), value: spriteName)
     }
 
     // MARK: - Dynamic HUD
