@@ -2,7 +2,7 @@
     "chapters": [
         {
             "id": "chapter_1",
-            "title": "AWAKENING",
+            "title": "Resurrection",
             "description": "The first clash begins.",
             "background": "skybox",
             "stages": [
@@ -11,21 +11,21 @@
                     "title": "Frozen King",
                     "enemy": "story_frozen_king",
                     "baseHP": 100,
-                    "baseAttack": 22,
+                    "baseAttack": 10,
                     "boss": true,
                     "difficulties": [
                         "normal",
                         "elite",
                         "boss"
                     ],
-                    "unlocksCharacter": "ice_warrior"
+                    "unlocksCharacter": "story_frozen_king"
                 },
                 {
                     "id": "c1_boss_elite",
-                    "title": "Frozen King",
-                    "enemy": "story_frozen_king",
-                    "baseHP": 420,
-                    "baseAttack": 22,
+                    "title": "Axel",
+                    "enemy": "axel",
+                    "baseHP": 200,
+                    "baseAttack": 20,
                     "boss": true,
                     "difficulties": [
                         "normal",
