@@ -1,0 +1,16 @@
+{
+    "musicSettings": {
+        "enabled": true,
+        "masterVolume": 0.8
+    },
+    "songs": [
+        {
+            "id": "rise_of_legends",
+            "title": "Rise of Legends",
+            "file": "rise_of_legends.mp3",
+            "type": "opening",
+            "loop": true,
+            "defaultVolume": 0.8
+        }
+    ]
+}

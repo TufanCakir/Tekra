@@ -36,7 +36,13 @@ struct RaidCard: View {
 
                     // NAME
                     Text(boss.name.uppercased())
-                        .font(.system(size: 26, weight: .black, design: .monospaced))
+                        .font(
+                            .system(
+                                size: 26,
+                                weight: .black,
+                                design: .monospaced
+                            )
+                        )
                         .foregroundColor(.white)
                         .lineLimit(1)
 
@@ -57,7 +63,9 @@ struct RaidCard: View {
 
     // MARK: - Helpers
 
-    private func statChip(_ label: String, _ value: Int, _ color: Color) -> some View {
+    private func statChip(_ label: String, _ value: Int, _ color: Color)
+        -> some View
+    {
         HStack(spacing: 4) {
             Text(label)
             Text("\(value)")
@@ -73,7 +81,7 @@ struct RaidCard: View {
         LinearGradient(
             colors: [
                 .black.opacity(0.1),
-                .black.opacity(0.9)
+                .black.opacity(0.9),
             ],
             startPoint: .top,
             endPoint: .bottom
@@ -86,7 +94,7 @@ struct RaidCard: View {
                 LinearGradient(
                     colors: [
                         Color.red.opacity(0.4),
-                        Color.white.opacity(0.05)
+                        Color.white.opacity(0.05),
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing

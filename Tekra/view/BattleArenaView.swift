@@ -105,7 +105,7 @@ struct BattleArenaView: View {
                 )
                 .offset(
                     x: -size.width * Layout.playerXOffsetFactor + engine.p1X,
-                    y: groundY - size.height * 0.06  // 👈 DAS ist der Trick
+                    y: groundY - size.height * 0.2  // 👈 DAS ist der Trick
                 )
             }
 
@@ -119,7 +119,7 @@ struct BattleArenaView: View {
                 .scaleEffect(x: -1, y: 1)
                 .offset(
                     x: size.width * Layout.enemyXOffsetFactor,
-                    y: groundY - size.height * 0.06
+                    y: groundY - size.height * 0.2
                 )
             }
         }

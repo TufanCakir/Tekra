@@ -12,10 +12,13 @@ final class EnemyAI {
     private var patternState: EnemyPatternState?
     private var currentPhase: EnemyPhase = .phase1
     private var enemyMaxHP: CGFloat = 100
+    private var comboCounter: Int = 0
+    private let maxCombo = 3
 
     func configurePattern(for enemy: Fighter) {
         enemyMaxHP = enemy.maxHP
         currentPhase = .phase1
+        comboCounter = 0
         loadPattern(for: .phase1)
     }
 
@@ -27,7 +30,7 @@ final class EnemyAI {
             currentPhase = .enraged
             loadPattern(for: .enraged)
 
-        case ..<0.5 where currentPhase == .phase1:
+        case ..<0.7 where currentPhase == .phase1:
             currentPhase = .phase2
             loadPattern(for: .phase2)
 
@@ -49,15 +52,17 @@ final class EnemyAI {
         case .phase2:
             patternState = EnemyPatternState(pattern: [
                 .attack(multiplier: 1.2),
+                .attack(multiplier: 1.2),
                 .heavyAttack,
-                .attack(multiplier: 1.0),
+                .wait,
             ])
 
         case .enraged:
             patternState = EnemyPatternState(pattern: [
-                .attack(multiplier: 1.5),
+                .attack(multiplier: 1.4),
                 .heavyAttack,
-                .enrage,
+                .attack(multiplier: 1.6),
+                .heavyAttack,
             ])
         }
     }
@@ -71,28 +76,49 @@ final class EnemyAI {
             return .basicAttack(1.0)
         }
 
-        switch step {
-        case .attack(let multiplier):
-            return .basicAttack(multiplier)
-        case .heavyAttack:
-            return .heavyAttack
-        case .wait:
+        // 🔥 COMBO LOGIC
+        if comboCounter >= maxCombo {
+            comboCounter = 0
             return .wait
+        }
+
+        switch step {
+
+        case .attack(let multiplier):
+            comboCounter += 1
+
+            // 💥 Punish low player HP
+            if playerHP < 40 && multiplier >= 1.2 {
+                comboCounter += 1
+                return .heavyAttack
+            }
+
+            return .basicAttack(multiplier)
+
+        case .heavyAttack:
+            comboCounter += 2
+            return .heavyAttack
+
         case .enrage:
+            comboCounter = 0
             return .enrage
+
+        case .wait:
+            comboCounter = 0
+            return .wait
         }
     }
-}
 
-enum EnemyAction {
-    case basicAttack(CGFloat)
-    case heavyAttack
-    case wait
-    case enrage
-}
+    enum EnemyAction {
+        case basicAttack(CGFloat)
+        case heavyAttack
+        case wait
+        case enrage
+    }
 
-enum EnemyPhase {
-    case phase1
-    case phase2
-    case enraged
+    enum EnemyPhase {
+        case phase1
+        case phase2
+        case enraged
+    }
 }

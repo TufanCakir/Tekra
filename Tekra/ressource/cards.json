@@ -64,5 +64,27 @@
         "cooldown": 0.8,
         "owner": "axel",
         "colorHex": "#85C1E9"
+    },
+    {
+        "id": "p4",
+        "title": "LIGHT PUNCH",
+        "type": "punch",
+        "iconName": "void_reaper_punch",
+        "poseName": "punch",
+        "damage": 15,
+        "cooldown": 0.8,
+        "owner": "void_reaper",
+        "colorHex": "#5DADE2"
+    },
+    {
+        "id": "k4",
+        "title": "VOID KICK",
+        "type": "kick",
+        "iconName": "void_reaper_kick",
+        "poseName": "kick",
+        "damage": 15,
+        "cooldown": 0.8,
+        "owner": "void_reaper",
+        "colorHex": "#85C1E9"
     }
 ]

@@ -25,7 +25,13 @@ struct StoryRewardOverlayView: View {
                 // =====================
                 VStack(spacing: 6) {
                     Text("VICTORY")
-                        .font(.system(size: 34, weight: .black, design: .monospaced))
+                        .font(
+                            .system(
+                                size: 34,
+                                weight: .black,
+                                design: .monospaced
+                            )
+                        )
                         .foregroundColor(.white)
                         .tracking(2)
 
@@ -58,7 +64,13 @@ struct StoryRewardOverlayView: View {
                 // =====================
                 Button(action: onContinue) {
                     Text("CONTINUE")
-                        .font(.system(size: 18, weight: .black, design: .monospaced))
+                        .font(
+                            .system(
+                                size: 18,
+                                weight: .black,
+                                design: .monospaced
+                            )
+                        )
                         .foregroundColor(.black)
                         .frame(maxWidth: .infinity)
                         .padding()

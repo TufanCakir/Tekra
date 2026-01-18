@@ -1,40 +1,50 @@
 {
-  "chapters": [
-    {
-      "id": "chapter_1",
-      "title": "Resurrection",
-      "description": "The first clash begins.",
-      "background": "skybox",
-      "stages": [
+    "chapters": [
         {
-          "id": "c1_boss_normal",
-          "title": "Frozen King",
-          "enemy": "story_frozen_king",
-          "baseHP": 100,
-          "baseAttack": 10,
-          "boss": true,
-          "difficulties": ["normal", "elite", "boss"],
-          "unlocksCharacter": "story_frozen_king",
-          "rewards": {
-            "xp": 150,
-            "coins": 75
-          }
-        },
-        {
-          "id": "c1_boss_elite",
-          "title": "Axel",
-          "enemy": "axel",
-          "baseHP": 200,
-          "baseAttack": 20,
-          "boss": true,
-          "difficulties": ["normal", "elite", "boss"],
-          "unlocksCharacter": "axel",
-          "rewards": {
-            "xp": 150,
-            "coins": 75
-          }
+            "id": "chapter_1",
+            "title": "Resurrection",
+            "description": "The first clash begins.",
+            "background": "skybox",
+            "stages": [
+                {
+                    "id": "c1_boss_normal",
+                    "title": "Frozen King",
+                    "enemy": "story_frozen_king",
+                    "baseHP": 30,
+                    "baseAttack": 30,
+                    "boss": true,
+                    "recommendedLevel": 30,
+                    "difficulties": [
+                        "normal",
+                        "elite",
+                        "boss"
+                    ],
+                    "unlocksCharacter": "story_frozen_king",
+                    "rewards": {
+                        "xp": 150,
+                        "coins": 75
+                    }
+                },
+                {
+                    "id": "c1_boss_elite",
+                    "title": "Axel",
+                    "enemy": "axel",
+                    "baseHP": 60,
+                    "baseAttack": 60,
+                    "boss": true,
+                    "recommendedLevel": 60,
+                    "difficulties": [
+                        "normal",
+                        "elite",
+                        "boss"
+                    ],
+                    "unlocksCharacter": "axel",
+                    "rewards": {
+                        "xp": 150,
+                        "coins": 75
+                    }
+                }
+            ]
         }
-      ]
-    }
-  ]
+    ]
 }

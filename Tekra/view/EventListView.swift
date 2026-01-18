@@ -53,7 +53,7 @@ struct EventListView: View {
             events = EventLoader.load()
         }
         .navigationDestination(item: $selectedEvent) { event in
-            EventBattleView(event: event)
+            EventFlowView(event: event)
         }
     }
 

@@ -18,120 +18,82 @@ struct CharacterPickerView: View {
     var body: some View {
         let theme = engine.progress?.theme
         let accentColor = Color(hex: theme?.energy.ice.core ?? "#00FFFF")
+        let level = engine.progress?.playerLevel ?? 1
 
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 22) {
+            VStack(spacing: 20) {
 
-                ForEach(FighterRegistry.playableCharacters) { hero in
-                    let isUnlocked =
-                        engine.progress?.isCharacterUnlocked(hero.id) ?? false
-                    let isSelected =
-                        engine.currentPlayer?.id == hero.id
+                // 🧠 PLAYER LEVEL HEADER
+                HStack(spacing: 12) {
+                    Image(systemName: "person.fill")
+                        .foregroundColor(accentColor)
 
-                    Button {
-                        guard isUnlocked else { return }
-                        withAnimation(
-                            .spring(response: 0.35, dampingFraction: 0.75)
-                        ) {
-                            engine.selectPlayer(hero)
-                        }
-                    } label: {
-                        VStack(spacing: 14) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("PLAYER LEVEL")
+                            .font(.caption2)
+                            .foregroundColor(.gray)
 
-                            // MARK: - Portrait
-                            ZStack {
-                                Circle()
-                                    .fill(Color.black.opacity(0.4))
-                                    .frame(width: 96, height: 96)
-
-                                Image(hero.imageName)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 72, height: 72)
-                                    .opacity(isUnlocked ? 1 : 0.25)
-
-                                if isSelected {
-                                    Circle()
-                                        .stroke(accentColor, lineWidth: 3)
-                                        .frame(width: 96, height: 96)
-                                        .shadow(
-                                            color: accentColor.opacity(0.8),
-                                            radius: 12
-                                        )
-                                }
-
-                                if !isUnlocked {
-                                    VStack(spacing: 6) {
-                                        Image(systemName: "lock.fill")
-                                        Text("LOCKED")
-                                            .font(.caption.bold())
-                                    }
-                                    .foregroundColor(.gray)
-                                }
-                            }
-
-                            // MARK: - Name
-                            Text(hero.name.uppercased())
-                                .font(
-                                    .system(
-                                        size: 14,
-                                        weight: .black,
-                                        design: .monospaced
-                                    )
+                        Text("LV. \(level)")
+                            .font(
+                                .system(
+                                    size: 20,
+                                    weight: .black,
+                                    design: .monospaced
                                 )
-                                .foregroundColor(
-                                    isUnlocked ? .white : .gray
-                                )
-                                .lineLimit(1)
-
-                            // MARK: - Stats
-                            HStack(spacing: 6) {
-                                Image(systemName: "bolt.fill")
-                                Text("\(Int(hero.attackPower)) ATK")
-                            }
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(
-                                isUnlocked ? accentColor : .gray
                             )
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(
-                                Capsule()
-                                    .fill(
-                                        isUnlocked
-                                            ? accentColor.opacity(0.18)
-                                            : Color.white.opacity(0.06)
-                                    )
-                            )
-                        }
-                        .padding(.vertical, 16)
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(
-                                    isSelected
-                                        ? Color.white.opacity(0.08)
-                                        : Color.black.opacity(0.3)
-                                )
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(
-                                    isSelected
-                                        ? accentColor.opacity(0.6)
-                                        : Color.white.opacity(0.08),
-                                    lineWidth: 1
-                                )
-                        )
-                        .scaleEffect(isSelected ? 1.03 : 1.0)
-                        .opacity(isUnlocked ? 1 : 0.45)
+                            .foregroundColor(.white)
                     }
-                    .buttonStyle(.plain)
-                    .disabled(!isUnlocked)
+
+                    Spacer()
+
+                    // Optional XP Progress (future-proof)
+                    Capsule()
+                        .fill(accentColor.opacity(0.25))
+                        .frame(width: 80, height: 6)
+                        .overlay(
+                            Capsule()
+                                .fill(accentColor)
+                                .frame(
+                                    width: CGFloat(level % 10) / 10 * 80,
+                                    height: 6
+                                ),
+                            alignment: .leading
+                        )
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+
+                // 👇 CHARACTERS GRID
+                LazyVGrid(columns: columns, spacing: 22) {
+                    ForEach(FighterRegistry.playableCharacters) { hero in
+                        characterCell(
+                            hero: hero,
+                            accentColor: accentColor
+                        )
+                    }
+                }
+                .padding(20)
             }
-            .padding(20)
         }
+    }
+
+    @ViewBuilder
+    private func characterCell(
+        hero: Fighter,
+        accentColor: Color
+    ) -> some View {
+        let isUnlocked = engine.progress?.isCharacterUnlocked(hero.id) ?? false
+
+        Button {
+            guard isUnlocked else { return }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                engine.selectPlayer(hero)
+            }
+        } label: {
+            // ⬅️ HIER dein bestehender VStack
+        }
+        .buttonStyle(.plain)
+        .disabled(!isUnlocked)
     }
 }
 

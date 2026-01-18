@@ -2,6 +2,7 @@
     {
         "id": 1,
         "title": "Frozen Trial",
+        "recommendedLevel": 10,
         "rounds": [
             [
                 {
@@ -9,9 +10,9 @@
                     "name": "Frozen King",
                     "image": "story_frozen_king",
                     "baseHP": 100,
-                    "baseAttack": 20,
-                    "hpMultiplier": 1.2,
-                    "damageMultiplier": 1.0
+                    "baseAttack": 30,
+                    "hpMultiplier": 1.5,
+                    "damageMultiplier": 1.5
                 }
             ]
         ]

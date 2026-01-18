@@ -5,8 +5,8 @@
 //  Created by Tufan Cakir on 17.01.26.
 //
 
-import Foundation
 import CoreGraphics
+import Foundation
 
 struct StoryResponse: Codable {
     let chapters: [StoryChapter]
@@ -31,7 +31,8 @@ struct StoryStage: Identifiable, Codable, Hashable {
     let boss: Bool?
     let difficulties: [StoryDifficulty]
     let unlocksCharacter: String?
-    let rewards: StoryRewards   // ⬅️ NEU
+    let rewards: StoryRewards  // ⬅️ NEU
+    let recommendedLevel: Int  // 👈 WICHTIG
 }
 
 struct StoryRewards: Codable, Hashable {

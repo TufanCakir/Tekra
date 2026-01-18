@@ -5,13 +5,14 @@
 //  Created by Tufan Cakir on 17.01.26.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 struct StoryBattleView: View {
     // Enhanced logging added to diagnose unlock flow
     @Environment(GameEngine.self) private var engine
     @Environment(\.dismiss) private var dismiss
+    @State private var showGameOver = false
 
     let stage: StoryStage
     let difficulty: StoryDifficulty
@@ -57,7 +58,16 @@ struct StoryBattleView: View {
                 briefingView
                     .transition(.opacity.combined(with: .scale))
             }
-            
+
+            // 💀 GAME OVER OVERLAY
+            if showGameOver {
+                GameOverOverlayView {
+                    engine.storyBattleState = .briefing
+                    engine.hardResetBattle()
+                    dismiss()
+                }
+            }
+
             // =========================
             // REWARD OVERLAY
             // =========================
@@ -90,6 +100,13 @@ struct StoryBattleView: View {
                 "🧠 Engine state: cleared=\(engine.isLevelCleared), wave=\(String(describing: engine.currentWave))"
             )
         }
+        .onChange(of: engine.playerHP) { _, newHP in
+            if newHP <= 0 && !showGameOver {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    showGameOver = true
+                }
+            }
+        }
         .onAppear {
             print(
                 "👋 StoryBattleView appeared. stage=\(stage.title), difficulty=\(difficulty.title)"
@@ -103,6 +120,29 @@ struct StoryBattleView: View {
         }
     }
 
+    private var storyDifficultyRating: DifficultyRating {
+        let playerLevel = engine.progress?.playerLevel ?? 1
+        return DifficultyEvaluator.rating(
+            playerLevel: playerLevel,
+            recommendedLevel: stage.recommendedLevel
+        )
+    }
+
+    private var difficultyBadge: some View {
+        HStack(spacing: 10) {
+            Text("RECOMMENDED LV \(stage.recommendedLevel)")
+                .font(.caption.bold())
+
+            Text(storyDifficultyRating.label)
+                .font(.caption.bold())
+                .foregroundColor(storyDifficultyRating.color)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 6)
+        .background(storyDifficultyRating.color.opacity(0.15))
+        .clipShape(Capsule())
+    }
+
     private func proceedAfterRewards() {
         let unlockIDOpt = stage.unlocksCharacter
 
@@ -110,7 +150,9 @@ struct StoryBattleView: View {
         guard
             let unlockID = unlockIDOpt,
             engine.progress?.unlockedCharacters.contains(unlockID) == false,
-            let fighter = FighterRegistry.playableCharacters.first(where: { $0.id == unlockID })
+            let fighter = FighterRegistry.playableCharacters.first(where: {
+                $0.id == unlockID
+            })
         else {
             exitBattle()
             return
@@ -174,13 +216,14 @@ struct StoryBattleView: View {
         progress.completeStage(stage.id)
         try? engine.modelContext?.save()
 
-        print("🏆 STORY REWARD: +\(stage.rewards.xp) XP, +\(stage.rewards.coins) Coins")
+        print(
+            "🏆 STORY REWARD: +\(stage.rewards.xp) XP, +\(stage.rewards.coins) Coins"
+        )
         print("✅ Marked stage as complete:", stage.id)
 
         // ⬅️ NUR Reward-State setzen
         engine.storyBattleState = .rewards
     }
-
 
     // MARK: - BRIEFING VIEW
     private var briefingView: some View {
@@ -199,18 +242,28 @@ struct StoryBattleView: View {
     }
 
     private var startButton: some View {
-        Button(action: startBattle) {
-            Text("START FIGHT")
-                .font(.system(size: 18, weight: .black, design: .monospaced))
-                .foregroundColor(.black)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(accentColor)
-                .cornerRadius(16)
-                .shadow(color: accentColor.opacity(0.5), radius: 12)
+        let blocked =
+            engine.currentPlayer == nil || storyDifficultyRating == .impossible
+
+        return Button(action: startBattle) {
+            Text(
+                storyDifficultyRating == .impossible
+                    ? "LEVEL TOO LOW"
+                    : "START FIGHT"
+            )
+            .font(.system(size: 18, weight: .black, design: .monospaced))
+            .foregroundColor(.black)
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(accentColor)
+            .cornerRadius(16)
+            .shadow(color: accentColor.opacity(0.5), radius: 12)
+            .disabled(storyDifficultyRating == .impossible)
+            .opacity(storyDifficultyRating == .impossible ? 0.4 : 1)
+
         }
-        .disabled(engine.currentPlayer == nil)
-        .opacity(engine.currentPlayer == nil ? 0.4 : 1)
+        .disabled(blocked)
+        .opacity(blocked ? 0.4 : 1)
     }
 
     private var characterPicker: some View {
@@ -225,6 +278,8 @@ struct StoryBattleView: View {
 
     private var headerView: some View {
         VStack(spacing: 10) {
+
+            // 🧠 STORY DIFFICULTY (Narrativ)
             Text(difficulty.title)
                 .font(.caption.bold())
                 .foregroundColor(accentColor)
@@ -232,6 +287,9 @@ struct StoryBattleView: View {
                 .padding(.vertical, 6)
                 .background(accentColor.opacity(0.15))
                 .clipShape(Capsule())
+
+            // 🎯 LEVEL-EMPFEHLUNG (Systemisch)
+            difficultyBadge
 
             Text(stage.title.uppercased())
                 .font(.system(size: 30, weight: .black, design: .monospaced))
@@ -256,7 +314,8 @@ struct StoryBattleView: View {
             wave: ArcadeWave.storySingleEnemy(
                 fighter: enemy,
                 hpMultiplier: difficulty.hpMultiplier,
-                damageMultiplier: difficulty.damageMultiplier
+                damageMultiplier: difficulty.damageMultiplier,
+                recommendedLevel: 1
             )
         )
     }
@@ -273,4 +332,3 @@ struct StoryBattleView: View {
         }
     }
 }
-

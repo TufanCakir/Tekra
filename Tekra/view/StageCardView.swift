@@ -25,11 +25,17 @@ struct StageCardView: View {
 
                     // ✅ REWARDS HIER
                     HStack(spacing: 20) {
-                        Label("\(stage.rewards.xp) XP", systemImage: "bolt.fill")
-                            .foregroundColor(.cyan)
+                        Label(
+                            "\(stage.rewards.xp) XP",
+                            systemImage: "bolt.fill"
+                        )
+                        .foregroundColor(.cyan)
 
-                        Label("\(stage.rewards.coins)", systemImage: "creditcard.fill")
-                            .foregroundColor(.orange)
+                        Label(
+                            "\(stage.rewards.coins)",
+                            systemImage: "creditcard.fill"
+                        )
+                        .foregroundColor(.orange)
                     }
                     .font(.caption)
                 }

@@ -11,6 +11,7 @@ import SwiftUI
 struct EventBattleView: View {
     @Environment(GameEngine.self) private var engine
     @Environment(\.dismiss) private var dismiss
+    @State private var showGameOver = false
 
     let event: GameEvent
     @State private var started = false
@@ -18,21 +19,35 @@ struct EventBattleView: View {
     var body: some View {
         ZStack {
             if started {
-                BattleContainerView(
-                    style: .event,
-                    event: event,
-                    onExit: {
-                        engine.resetBattle()
-                        dismiss()
-                    },
-                    controlPanel: {
-                        BattleControlPanel(
-                            color: .purple,
-                            cards: engine.hand,
-                            onPlay: engine.playCard
-                        )
+                ZStack {
+
+                    BattleContainerView(
+                        style: .event,
+                        event: event,
+                        onExit: {
+                            engine.resetBattle()
+                            dismiss()
+                        },
+                        controlPanel: {
+                            BattleControlPanel(
+                                color: .purple,
+                                cards: engine.hand,
+                                onPlay: engine.playCard
+                            )
+                        }
+                    )
+                    .transition(.opacity)
+
+                    // 💀 GAME OVER OVERLAY
+                    if showGameOver {
+                        GameOverOverlayView {
+                            engine.resetBattle()
+                            showGameOver = false
+                            started = false
+                            dismiss()
+                        }
                     }
-                )
+                }
                 .transition(.opacity)
             } else {
                 eventBriefingView
@@ -53,18 +68,36 @@ struct EventBattleView: View {
                 print("🃏 HAND:", engine.hand.map { $0.id })
             }
         }
+        .onChange(of: engine.playerHP) { _, newHP in
+            if newHP <= 0 && started && !showGameOver {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    showGameOver = true
+                }
+            }
+        }
         .onAppear {
             print("🧪 EVENT MODE:", engine.currentMode)
             print("🃏 HAND:", engine.hand.map { $0.id })
         }
     }
 
+    private var eventDifficulty: DifficultyRating {
+        let playerLevel = engine.progress?.playerLevel ?? 1
+        return DifficultyEvaluator.rating(
+            playerLevel: playerLevel,
+            recommendedLevel: event.requiredLevel
+        )
+    }
+
     // MARK: - EVENT BRIEFING
     private var eventBriefingView: some View {
-        VStack(spacing: 28) {
+        let blocked =
+            engine.currentPlayer == nil || eventDifficulty == .impossible
+
+        return VStack(spacing: 28) {
 
             // Header
-            VStack(spacing: 6) {
+            VStack(spacing: 10) {
                 Text("WORLD EVENT")
                     .font(.caption.bold())
                     .foregroundColor(.purple)
@@ -75,6 +108,8 @@ struct EventBattleView: View {
                     )
                     .foregroundColor(.white)
                     .italic()
+
+                difficultyBadge  // ⬅️ HIER
             }
 
             // Event Art
@@ -118,23 +153,42 @@ struct EventBattleView: View {
 
             // Start Button
             Button {
-                engine.loadEvent(event)  // ⬅️ setzt Mode + Enemy + drawHand
-                started = true  // ⬅️ JETZT erst BattleView zeigen
+                engine.loadEvent(event)
+                started = true
             } label: {
-                Text("START EVENT")
-                    .font(
-                        .system(size: 18, weight: .black, design: .monospaced)
-                    )
-                    .foregroundColor(.black)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.purple)
-                    .cornerRadius(14)
-                    .shadow(color: .purple.opacity(0.4), radius: 10)
+                Text(
+                    eventDifficulty == .impossible
+                        ? "LEVEL TOO LOW"
+                        : "START EVENT"
+                )
+                .font(.system(size: 18, weight: .black, design: .monospaced))
+                .foregroundColor(.black)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.purple)
+                .cornerRadius(14)
+                .shadow(color: .purple.opacity(0.4), radius: 10)
             }
+            .disabled(blocked)
+            .opacity(blocked ? 0.4 : 1)
         }
         .padding()
         .background(Color.black.ignoresSafeArea())
+    }
+
+    private var difficultyBadge: some View {
+        HStack(spacing: 10) {
+            Text("RECOMMENDED LV \(event.requiredLevel)")
+                .font(.caption.bold())
+
+            Text(eventDifficulty.label)
+                .font(.caption.bold())
+                .foregroundColor(eventDifficulty.color)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 6)
+        .background(eventDifficulty.color.opacity(0.15))
+        .clipShape(Capsule())
     }
 
     // MARK: - Reward UI

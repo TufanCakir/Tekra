@@ -12,14 +12,15 @@
             "rewards": [
                 {
                     "type": "xp",
-                    "amount": 250
+                    "amount": 30
                 },
                 {
                     "type": "coins",
-                    "amount": 100
+                    "amount": 30
                 }
             ],
             "requiredLevel": 1,
+            "recommendedLevel": 30,
             "active": true
         }
     ]

@@ -22,12 +22,13 @@ enum GameMode {
 enum StoryBattleState {
     case briefing
     case fighting
-    case rewards      // ⬅️ NEU
+    case rewards  // ⬅️ NEU
     case unlocking
 }
 
 @Observable @MainActor
 class GameEngine {
+
     private let combatSystem = CombatSystem()
     private let cardSystem = CardSystem()
     private let progressionSystem = ProgressionSystem()
@@ -45,7 +46,9 @@ class GameEngine {
     var currentMode: GameMode = .event
     var currentWave: ArcadeWave?
     var currentRoundIndex: Int = 0
-
+    var isPlayerDefeated: Bool {
+        playerHP <= 0
+    }
     var allCards: [Card] = []
     var hand: [Card] = []
     var currentPose = "idle"
@@ -75,6 +78,7 @@ class GameEngine {
     private var modeController: ModeController!
 
     init(mode: GameMode = .arcade) {
+
         FighterRegistry.loadAll()
         self.allCards = CardLoader.load()
         self.currentMode = mode
@@ -152,16 +156,42 @@ class GameEngine {
         enemy: Fighter,
         background: String
     ) {
-        guard let player = currentPlayer else {
-            print("❌ No current player set!")
-            return
-        }
+        guard let player = currentPlayer else { return }
 
-        enemyAI.configurePattern(for: enemy)
+        let playerLevel = progress?.playerLevel ?? 1
 
-        self.currentEnemy = enemy
-        self.playerHP = player.maxHP
-        self.enemyHP = enemy.maxHP
+        let scaledHP = EnemyScaling.scaledHP(
+            baseHP: enemy.maxHP,
+            playerLevel: playerLevel,
+            mode: currentMode
+        )
+
+        let scaledAttack = EnemyScaling.scaledAttack(
+            baseAttack: enemy.attackPower,
+            playerLevel: playerLevel,
+            mode: currentMode
+        )
+
+        let scaledEnemy = Fighter(
+            id: enemy.id,
+            name: enemy.name,
+            imageName: enemy.imageName,
+            maxHP: scaledHP,
+            attackPower: scaledAttack,
+            availablePoses: enemy.availablePoses,
+            cardOwners: enemy.cardOwners
+        )
+
+        enemyAI.configurePattern(for: scaledEnemy)
+
+        self.currentEnemy = scaledEnemy
+        let scaledPlayerHP = PlayerScaling.scaledHP(
+            baseHP: player.maxHP,
+            playerLevel: playerLevel
+        )
+
+        self.playerHP = scaledPlayerHP
+        self.enemyHP = scaledEnemy.maxHP
         self.currentBackground = background
 
         isLevelCleared = false
@@ -170,7 +200,7 @@ class GameEngine {
         enemyPose = "idle"
         p1X = 0
 
-        drawHand()  // ✅ jetzt garantiert mit richtigem Player
+        drawHand()
     }
 
     func drawHand() {
@@ -345,7 +375,14 @@ class GameEngine {
 
             self.currentPose = card.poseName
 
-            self.triggerHitEffects(damage: card.damage, toEnemy: true)
+            let playerLevel = self.progress?.playerLevel ?? 1
+
+            let scaledDamage = PlayerScaling.scaledAttack(
+                baseAttack: card.damage,
+                playerLevel: playerLevel
+            )
+
+            self.triggerHitEffects(damage: scaledDamage, toEnemy: true)
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
                 withAnimation(.easeOut(duration: 0.2)) {

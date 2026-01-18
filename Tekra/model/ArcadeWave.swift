@@ -12,6 +12,7 @@ struct ArcadeWave: Identifiable {
     let id: Int
     let title: String
     let rounds: [[ArcadeEnemy]]
+    let recommendedLevel: Int  // ⬅️ NEU
 }
 
 struct ArcadeEnemy: Identifiable, Codable {
@@ -42,6 +43,7 @@ struct ArcadeWaveDTO: Codable {
     let id: Int
     let title: String
     let rounds: [[ArcadeEnemyDTO]]
+    let recommendedLevel: Int  // ⬅️ NEU
 }
 
 struct ArcadeEnemyDTO: Codable {
@@ -60,7 +62,8 @@ extension ArcadeWave {
     static func storySingleEnemy(
         fighter: Fighter,
         hpMultiplier: CGFloat,
-        damageMultiplier: CGFloat
+        damageMultiplier: CGFloat,
+        recommendedLevel: Int
     ) -> ArcadeWave {
 
         let scaledFighter = Fighter(
@@ -87,7 +90,8 @@ extension ArcadeWave {
         return ArcadeWave(
             id: Int.random(in: 1_000...9_999),
             title: "Story Battle",
-            rounds: [[enemy]]
+            rounds: [[enemy]],
+            recommendedLevel: recommendedLevel
         )
     }
 }
@@ -105,6 +109,7 @@ enum ArcadeLoader {
             print("❌ arcade.json nicht gefunden")
             return []
         }
+        print("📦 Loading arcade.json…")
 
         do {
             let dtoWaves = try JSONDecoder().decode(
@@ -153,7 +158,8 @@ enum ArcadeLoader {
                 return ArcadeWave(
                     id: dto.id,
                     title: dto.title,
-                    rounds: rounds
+                    rounds: rounds,
+                    recommendedLevel: dto.recommendedLevel
                 )
             }
 

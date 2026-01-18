@@ -26,7 +26,11 @@ struct RaidListView: View {
                     header
 
                     VStack(spacing: 20) {
-                        ForEach(FighterRegistry.currentRaidBosses.values.sorted { $0.name < $1.name }) { boss in
+                        ForEach(
+                            FighterRegistry.currentRaidBosses.values.sorted {
+                                $0.name < $1.name
+                            }
+                        ) { boss in
                             RaidCard(boss: boss) {
                                 selectedBoss = boss
                             }
@@ -40,7 +44,7 @@ struct RaidListView: View {
             }
         }
         .navigationDestination(item: $selectedBoss) { boss in
-            RaidBattleView(boss: boss)
+            RaidFlowView(boss: boss)
         }
     }
 

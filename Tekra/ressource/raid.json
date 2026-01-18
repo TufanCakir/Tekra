@@ -3,28 +3,30 @@
         "id": "frozen_king",
         "name": "Frozen King",
         "imageName": "story_frozen_king",
-        "maxHP": 1500,
-        "attackPower": 45,
+        "maxHP": 300,
+        "attackPower": 30,
         "raidBackground": "skybox",
         "availablePoses": [
             "idle",
             "punch",
             "kick",
             "special"
-        ]
+        ],
+        "recommendedLevel": 60
     },
     {
         "id": "void_reaper",
         "name": "The Void Reaper",
-        "imageName": "story_frozen_king",
-        "maxHP": 2500,
+        "imageName": "void_reaper",
+        "maxHP": 600,
         "attackPower": 60,
-        "raidBackground": "skybox",
+        "raidBackground": "arena_1",
         "availablePoses": [
             "idle",
             "punch",
             "kick",
             "special"
-        ]
+        ],
+        "recommendedLevel": 120
     }
 ]

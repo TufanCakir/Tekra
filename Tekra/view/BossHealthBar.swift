@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct BossHealthBar: View {
+    let bossName: String
     let currentHP: CGFloat
     let maxHP: CGFloat
 
@@ -18,9 +19,8 @@ struct BossHealthBar: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
 
-            // HEADER
             HStack {
-                Text("BOSS")
+                Text(bossName.uppercased())
                     .font(
                         .system(size: 12, weight: .black, design: .monospaced)
                     )
@@ -33,10 +33,8 @@ struct BossHealthBar: View {
                     .foregroundColor(.white.opacity(0.7))
             }
 
-            // HEALTH BAR
             ZStack(alignment: .leading) {
 
-                // Background
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.black.opacity(0.6))
                     .overlay(
@@ -44,7 +42,6 @@ struct BossHealthBar: View {
                             .stroke(Color.white.opacity(0.1), lineWidth: 1)
                     )
 
-                // HP Fill
                 RoundedRectangle(cornerRadius: 8)
                     .fill(
                         LinearGradient(
@@ -55,11 +52,9 @@ struct BossHealthBar: View {
                             endPoint: .trailing
                         )
                     )
-                    .frame(maxWidth: .infinity, alignment: .leading)
                     .scaleEffect(x: ratio, y: 1, anchor: .leading)
                     .animation(.easeOut(duration: 0.25), value: ratio)
 
-                // Critical Glow
                 if ratio < 0.25 {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(Color.red.opacity(0.8), lineWidth: 2)

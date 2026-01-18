@@ -20,7 +20,9 @@ final class PlayerProgress {
     var unlockedCharacters: [String]
     var completedStages: [String]
     var unlockedCardIDs: [String]
-
+    var playerLevel: Int {
+        max(1, xp / 100 + 1)
+    }
     var unlockedLevels: Int
     var coins: Int
     var highScore: Int
