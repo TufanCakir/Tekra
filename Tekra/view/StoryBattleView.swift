@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct StoryBattleView: View {
     // Enhanced logging added to diagnose unlock flow
@@ -56,6 +57,18 @@ struct StoryBattleView: View {
                 briefingView
                     .transition(.opacity.combined(with: .scale))
             }
+            
+            // =========================
+            // REWARD OVERLAY
+            // =========================
+            if battleState == .rewards {
+                StoryRewardOverlayView(
+                    xp: stage.rewards.xp,
+                    coins: stage.rewards.coins
+                ) {
+                    proceedAfterRewards()
+                }
+            }
 
             // =========================
             // UNLOCK OVERLAY
@@ -88,6 +101,25 @@ struct StoryBattleView: View {
         .onAppear {
             print("🃏 EVENT HAND:", engine.hand.map { $0.id })
         }
+    }
+
+    private func proceedAfterRewards() {
+        let unlockIDOpt = stage.unlocksCharacter
+
+        // Kein Unlock → direkt raus
+        guard
+            let unlockID = unlockIDOpt,
+            engine.progress?.unlockedCharacters.contains(unlockID) == false,
+            let fighter = FighterRegistry.playableCharacters.first(where: { $0.id == unlockID })
+        else {
+            exitBattle()
+            return
+        }
+
+        // Unlock
+        engine.unlockCharacterAndSave(unlockID)
+        unlockedFighter = fighter
+        engine.storyBattleState = .unlocking
     }
 
     // MARK: - UNLOCK OVERLAY
@@ -127,58 +159,28 @@ struct StoryBattleView: View {
     }
 
     // MARK: - VICTORY
-        private func resolveVictory() {
-            print("🏁 resolveVictory() starting…")
-            if let progress = engine.progress {
-                print(
-                    "📒 Progress exists. Completed stages before: \(progress.completedStages)"
-                )
-            } else {
-                print("⚠️ No progress object found on engine!")
-            }
-            engine.progress?.completeStage(stage.id)
-            print("✅ Marked stage as complete: \(stage.id) \"\(stage.title)\"")
+    private func resolveVictory() {
+        print("🏁 resolveVictory() starting…")
 
-            let unlockIDOpt = stage.unlocksCharacter
-            print("🔎 Stage unlock candidate: \(String(describing: unlockIDOpt))")
-
-            guard let unlockID = unlockIDOpt else {
-                print("ℹ️ Stage has no unlocksCharacter set. Exiting battle.")
-                exitBattle()
-                return
-            }
-            
-            // 🔐 Prüfen ob bereits unlocked
-            if engine.progress?.unlockedCharacters.contains(unlockID) == true {
-                print("ℹ️ Character \(unlockID) already unlocked – skipping unlock overlay")
-                exitBattle()
-                return
-            }
-
-            guard
-                let fighter = FighterRegistry.playableCharacters.first(where: {
-                    $0.id == unlockID
-                })
-            else {
-                print(
-                    "❌ Fighter with id \(unlockID) not found in FighterRegistry.playableCharacters"
-                )
-                exitBattle()
-                return
-            }
-
-            print(
-                "🗝️ Attempting to unlock fighter id=\(unlockID) name=\(fighter.name)"
-            )
-            engine.unlockCharacterAndSave(unlockID)
-            print(
-                "📦 Engine progress unlocked now: \(engine.progress?.unlockedCharacters ?? [])"
-            )
-
-            unlockedFighter = fighter
-            engine.storyBattleState = .unlocking
-            print("🎆 Set battleState to .unlocking and stored unlockedFighter")
+        guard let progress = engine.progress else {
+            print("⚠️ No progress object found on engine!")
+            exitBattle()
+            return
         }
+
+        // ✅ STORY REWARDS
+        progress.addXP(stage.rewards.xp)
+        progress.addCoins(stage.rewards.coins)
+        progress.completeStage(stage.id)
+        try? engine.modelContext?.save()
+
+        print("🏆 STORY REWARD: +\(stage.rewards.xp) XP, +\(stage.rewards.coins) Coins")
+        print("✅ Marked stage as complete:", stage.id)
+
+        // ⬅️ NUR Reward-State setzen
+        engine.storyBattleState = .rewards
+    }
+
 
     // MARK: - BRIEFING VIEW
     private var briefingView: some View {
@@ -271,3 +273,4 @@ struct StoryBattleView: View {
         }
     }
 }
+

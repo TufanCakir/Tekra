@@ -22,6 +22,7 @@ enum GameMode {
 enum StoryBattleState {
     case briefing
     case fighting
+    case rewards      // ⬅️ NEU
     case unlocking
 }
 
@@ -66,7 +67,7 @@ class GameEngine {
     var currentEnemy: Fighter?
 
     // MARK: - Persistence Link
-    private var modelContext: ModelContext?
+    var modelContext: ModelContext?
     var activeThemeID: String = ""
     var progress: PlayerProgress?  // Nutzt jetzt dein echtes SwiftData Modell
 

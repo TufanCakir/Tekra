@@ -18,35 +18,39 @@ struct StageCardView: View {
             // HEADER
             // =========================
             HStack(alignment: .top) {
-
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 10) {
                     Text(stage.title.uppercased())
-                        .font(
-                            .system(
-                                size: 18,
-                                weight: .black,
-                                design: .monospaced
-                            )
-                        )
+                        .font(.headline)
                         .foregroundColor(.white)
 
-                    Text("STAGE")
-                        .font(.caption)
-                        .foregroundColor(.gray)
+                    // ✅ REWARDS HIER
+                    HStack(spacing: 20) {
+                        Label("\(stage.rewards.xp) XP", systemImage: "bolt.fill")
+                            .foregroundColor(.cyan)
+
+                        Label("\(stage.rewards.coins)", systemImage: "creditcard.fill")
+                            .foregroundColor(.orange)
+                    }
+                    .font(.caption)
                 }
+                .padding()
 
                 Spacer()
 
-                // Optional: Boss Badge
-                if stage.boss ?? false {
-                    Text("BOSS")
-                        .font(.caption.bold())
-                        .foregroundColor(.red)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color.red.opacity(0.15))
-                        .clipShape(Capsule())
-                }
+                Text("STAGE")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+
+            // Optional: Boss Badge
+            if stage.boss ?? false {
+                Text("BOSS")
+                    .font(.caption.bold())
+                    .foregroundColor(.red)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Color.red.opacity(0.15))
+                    .clipShape(Capsule())
             }
 
             Divider()

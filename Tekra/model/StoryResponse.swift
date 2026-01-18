@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreGraphics
 
 struct StoryResponse: Codable {
     let chapters: [StoryChapter]
@@ -30,6 +31,12 @@ struct StoryStage: Identifiable, Codable, Hashable {
     let boss: Bool?
     let difficulties: [StoryDifficulty]
     let unlocksCharacter: String?
+    let rewards: StoryRewards   // ⬅️ NEU
+}
+
+struct StoryRewards: Codable, Hashable {
+    let xp: Int
+    let coins: Int
 }
 
 struct StageSelection: Identifiable, Hashable {

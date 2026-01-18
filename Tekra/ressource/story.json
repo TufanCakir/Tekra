@@ -1,40 +1,40 @@
 {
-    "chapters": [
+  "chapters": [
+    {
+      "id": "chapter_1",
+      "title": "Resurrection",
+      "description": "The first clash begins.",
+      "background": "skybox",
+      "stages": [
         {
-            "id": "chapter_1",
-            "title": "Resurrection",
-            "description": "The first clash begins.",
-            "background": "skybox",
-            "stages": [
-                {
-                    "id": "c1_boss_normal",
-                    "title": "Frozen King",
-                    "enemy": "story_frozen_king",
-                    "baseHP": 100,
-                    "baseAttack": 10,
-                    "boss": true,
-                    "difficulties": [
-                        "normal",
-                        "elite",
-                        "boss"
-                    ],
-                    "unlocksCharacter": "story_frozen_king"
-                },
-                {
-                    "id": "c1_boss_elite",
-                    "title": "Axel",
-                    "enemy": "axel",
-                    "baseHP": 200,
-                    "baseAttack": 20,
-                    "boss": true,
-                    "difficulties": [
-                        "normal",
-                        "elite",
-                        "boss"
-                    ],
-                    "unlocksCharacter": "axel"
-                }
-            ]
+          "id": "c1_boss_normal",
+          "title": "Frozen King",
+          "enemy": "story_frozen_king",
+          "baseHP": 100,
+          "baseAttack": 10,
+          "boss": true,
+          "difficulties": ["normal", "elite", "boss"],
+          "unlocksCharacter": "story_frozen_king",
+          "rewards": {
+            "xp": 150,
+            "coins": 75
+          }
+        },
+        {
+          "id": "c1_boss_elite",
+          "title": "Axel",
+          "enemy": "axel",
+          "baseHP": 200,
+          "baseAttack": 20,
+          "boss": true,
+          "difficulties": ["normal", "elite", "boss"],
+          "unlocksCharacter": "axel",
+          "rewards": {
+            "xp": 150,
+            "coins": 75
+          }
         }
-    ]
+      ]
+    }
+  ]
 }
