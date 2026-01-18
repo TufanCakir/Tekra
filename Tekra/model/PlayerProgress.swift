@@ -30,6 +30,9 @@ final class PlayerProgress {
     var xp: Int
     var level: Int
 
+    var currentXP: Int
+    var xpForNextLevel: Int
+
     var themeID: String
 
     // MARK: - Theme Cache
@@ -52,6 +55,8 @@ final class PlayerProgress {
         self.unlockedLevels = 1
         self.coins = 0
         self.highScore = 0
+        self.currentXP = 0
+        self.xpForNextLevel = 100
         self.xp = 0
         self.level = 1
         self.lastPlayed = Date()

@@ -14,6 +14,7 @@ struct StoryBattleView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showGameOver = false
 
+    let chapter: StoryChapter  // ✅ HIER
     let stage: StoryStage
     let difficulty: StoryDifficulty
 
@@ -117,6 +118,13 @@ struct StoryBattleView: View {
         }
         .onAppear {
             print("🃏 EVENT HAND:", engine.hand.map { $0.id })
+        }
+        .onAppear {
+            engine.storyBattleState = .briefing  // 🔥 HARD RESET DES STORY STATES
+            print(
+                "🧼 StoryBattleState reset to briefing for stage:",
+                stage.title
+            )
         }
     }
 
@@ -302,27 +310,35 @@ struct StoryBattleView: View {
         }
     }
 
+    private var resolvedBackground: String {
+        stage.background ?? chapter.background
+    }
+
     // MARK: - START
     private func startBattle() {
         print("🚀 startBattle()")
 
-        engine.softResetBattle()
+        engine.hardResetBattle()  // 🔥 WICHTIG
         engine.storyBattleState = .fighting
 
         let enemy = stage.makeEnemy(difficulty: difficulty)
+
         engine.startArcade(
             wave: ArcadeWave.storySingleEnemy(
                 fighter: enemy,
                 hpMultiplier: difficulty.hpMultiplier,
                 damageMultiplier: difficulty.damageMultiplier,
-                recommendedLevel: 1
+                recommendedLevel: stage.recommendedLevel,
+                background: resolvedBackground
             )
         )
+
+        print("🎬 STAGE BACKGROUND:", resolvedBackground)
     }
 
     // MARK: - EXIT
     private func exitBattle() {
-        engine.storyBattleState = .briefing
+        engine.storyBattleState = .briefing  // 🔥 WICHTIG
         engine.hardResetBattle()
         dismiss()
         print("🚪 exitBattle() called. Dismissing after cleanup…")

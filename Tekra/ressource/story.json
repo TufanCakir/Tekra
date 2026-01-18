@@ -4,7 +4,7 @@
             "id": "chapter_1",
             "title": "Resurrection",
             "description": "The first clash begins.",
-            "background": "skybox",
+            "background": "arena_1",
             "stages": [
                 {
                     "id": "c1_boss_normal",
@@ -13,7 +13,8 @@
                     "baseHP": 30,
                     "baseAttack": 30,
                     "boss": true,
-                    "recommendedLevel": 30,
+                    "recommendedLevel": 1,
+                    "background": "arena_1",
                     "difficulties": [
                         "normal",
                         "elite",
@@ -32,7 +33,8 @@
                     "baseHP": 60,
                     "baseAttack": 60,
                     "boss": true,
-                    "recommendedLevel": 60,
+                    "recommendedLevel": 1,
+                    "background": "arena_2",
                     "difficulties": [
                         "normal",
                         "elite",

@@ -5,7 +5,7 @@
             "title": "Frozen Front",
             "description":
                 "Cryogenic defenses are active. Break through the frozen front and defeat the ice sector guardians.",
-            "background": "skybox",
+            "background": "arena_1",
             "enemies": [
                 "story_frozen_king"
             ],

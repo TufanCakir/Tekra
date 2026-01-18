@@ -22,14 +22,15 @@ struct HomeView: View {
                     .chromeGradient()
                     .ignoresSafeArea()
 
-                VStack(spacing: 32) {
+                VStack {
+                    HeaderView()
 
                     Spacer()
 
                     Image("tekra_logo")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 280)
+                        .frame(width: 380)
                         .scaleEffect(logoScale)
                         .opacity(logoOpacity)
                         .offset(x: logoOffsetX)

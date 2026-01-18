@@ -51,6 +51,7 @@ struct StoryChapterView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $selection) { sel in
             StoryBattleView(
+                chapter: chapter,
                 stage: sel.stage,
                 difficulty: sel.difficulty
             )

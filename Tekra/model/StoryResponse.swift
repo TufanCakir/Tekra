@@ -33,6 +33,8 @@ struct StoryStage: Identifiable, Codable, Hashable {
     let unlocksCharacter: String?
     let rewards: StoryRewards  // ⬅️ NEU
     let recommendedLevel: Int  // 👈 WICHTIG
+
+    let background: String?  // 👈 NEU (optional!)
 }
 
 struct StoryRewards: Codable, Hashable {

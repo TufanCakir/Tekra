@@ -23,6 +23,7 @@ final class ModeController {
         engine.currentMode = .arcade
         engine.currentWave = wave
         engine.currentRoundIndex = 0
+        engine.currentBackground = wave.background
 
         loadArcadeRound(index: 0)
     }
@@ -51,13 +52,14 @@ final class ModeController {
     }
 
     // MARK: - Raid
-
     func startRaid(bossID: String) {
         guard let engine else { return }
 
         engine.currentMode = .raid
 
         if let boss = FighterRegistry.raidBoss(id: bossID) {
+            engine.currentRaidBoss = boss  // 🔥 WICHTIG
+
             applyMatchSettings(
                 enemy: boss.makeFighter(),
                 background: boss.raidBackground

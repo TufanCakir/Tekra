@@ -49,6 +49,7 @@ class GameEngine {
     var isPlayerDefeated: Bool {
         playerHP <= 0
     }
+    var currentRaidBoss: RaidBoss?  // ✅ NEU
     var allCards: [Card] = []
     var hand: [Card] = []
     var currentPose = "idle"
@@ -259,9 +260,12 @@ class GameEngine {
         if let enemyData = wave.rounds[index].first {
             let arcadeFighter = enemyData.fighter
 
+            // Log which background we will apply
+            print("🎬 APPLY BACKGROUND:", wave.background)
+
             applyMatchSettings(
                 enemy: arcadeFighter,
-                background: currentBackground
+                background: wave.background
             )
 
             currentRoundIndex = index
@@ -272,10 +276,34 @@ class GameEngine {
     // MARK: - Combat & Victory Logic
     private func handleVictory() {
         isLevelCleared = true
-        progressionSystem.applyVictoryRewards(
-            mode: currentMode,
-            progress: progress
-        )
+        guard let progress else { return }
+
+        switch currentMode {
+
+        case .arcade:
+            if let rewards = currentWave?.rewards {
+                progress.addXP(rewards.xp)
+                progress.addCoins(rewards.coins)
+                print(
+                    "🏆 Arcade Rewards: +\(rewards.xp) XP, +\(rewards.coins) Coins"
+                )
+            }
+
+        case .raid:
+            if let rewards = currentRaidBoss?.rewards {
+                progress.addXP(rewards.xp)
+                progress.addCoins(rewards.coins)
+                print(
+                    "👑 Raid Rewards: +\(rewards.xp) XP, +\(rewards.coins) Coins"
+                )
+            }
+
+        case .event:
+            progressionSystem.applyVictoryRewards(
+                mode: currentMode,
+                progress: progress
+            )
+        }
     }
 
     func syncSelectedCharacterFromProgress() {
@@ -341,6 +369,7 @@ class GameEngine {
         hand.removeAll()
         currentEnemy = nil
         currentWave = nil
+        currentRaidBoss = nil  // ✅ NEU
         currentRoundIndex = 0
     }
 

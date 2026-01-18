@@ -2,14 +2,19 @@
     {
         "id": 1,
         "title": "Frozen Trial",
-        "recommendedLevel": 10,
+        "recommendedLevel": 1,
+        "background": "arena_1",
+        "rewards": {
+            "xp": 50,
+            "coins": 25
+        },
         "rounds": [
             [
                 {
                     "enemyID": "story_frozen_king",
                     "name": "Frozen King",
                     "image": "story_frozen_king",
-                    "baseHP": 100,
+                    "baseHP": 30,
                     "baseAttack": 30,
                     "hpMultiplier": 1.5,
                     "damageMultiplier": 1.5

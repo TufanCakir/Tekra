@@ -11,8 +11,10 @@ import Foundation
 struct ArcadeWave: Identifiable {
     let id: Int
     let title: String
-    let rounds: [[ArcadeEnemy]]
-    let recommendedLevel: Int  // ⬅️ NEU
+    let background: String  // 👈 3.
+    let rounds: [[ArcadeEnemy]]  // 👈 4.
+    let recommendedLevel: Int  // 👈 5.
+    let rewards: StoryRewards  // ✅ NEU
 }
 
 struct ArcadeEnemy: Identifiable, Codable {
@@ -42,8 +44,10 @@ struct ArcadeEnemy: Identifiable, Codable {
 struct ArcadeWaveDTO: Codable {
     let id: Int
     let title: String
+    let background: String  // 👈 NEU
     let rounds: [[ArcadeEnemyDTO]]
     let recommendedLevel: Int  // ⬅️ NEU
+    let rewards: StoryRewards  // ✅ NEU
 }
 
 struct ArcadeEnemyDTO: Codable {
@@ -63,7 +67,9 @@ extension ArcadeWave {
         fighter: Fighter,
         hpMultiplier: CGFloat,
         damageMultiplier: CGFloat,
-        recommendedLevel: Int
+        recommendedLevel: Int,
+        background: String,  // ✅ NEU
+        rewards: StoryRewards = .init(xp: 0, coins: 0)
     ) -> ArcadeWave {
 
         let scaledFighter = Fighter(
@@ -90,8 +96,10 @@ extension ArcadeWave {
         return ArcadeWave(
             id: Int.random(in: 1_000...9_999),
             title: "Story Battle",
-            rounds: [[enemy]],
-            recommendedLevel: recommendedLevel
+            background: background,  // ✅ 3.
+            rounds: [[enemy]],  // ✅ 4.
+            recommendedLevel: recommendedLevel,
+            rewards: rewards,
         )
     }
 }
@@ -158,8 +166,10 @@ enum ArcadeLoader {
                 return ArcadeWave(
                     id: dto.id,
                     title: dto.title,
+                    background: dto.background,  // 🔥 aus JSON
                     rounds: rounds,
-                    recommendedLevel: dto.recommendedLevel
+                    recommendedLevel: dto.recommendedLevel,
+                    rewards: dto.rewards  // ✅ WICHTIG
                 )
             }
 

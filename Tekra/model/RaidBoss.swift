@@ -16,12 +16,14 @@ struct RaidBoss: Identifiable, Hashable, Decodable {
     let attackPower: Double
     let raidBackground: String
     let availablePoses: Set<String>
-    // 🆕 NEU
     let recommendedLevel: Int
+
+    // ✅ NEU
+    let rewards: StoryRewards
 
     enum CodingKeys: String, CodingKey {
         case id, name, imageName, maxHP, attackPower, raidBackground,
-            availablePoses, recommendedLevel
+            availablePoses, recommendedLevel, rewards
     }
 
     init(
@@ -32,7 +34,8 @@ struct RaidBoss: Identifiable, Hashable, Decodable {
         attackPower: Double,
         raidBackground: String,
         recommendedLevel: Int = 1,  // 👈 Default
-        availablePoses: Set<String> = ["idle", "punch", "kick", "special"]
+        availablePoses: Set<String> = ["idle", "punch", "kick", "special"],
+        rewards: StoryRewards = StoryRewards(xp: 100, coins: 50)
     ) {
         self.id = id
         self.name = name
@@ -42,6 +45,7 @@ struct RaidBoss: Identifiable, Hashable, Decodable {
         self.raidBackground = raidBackground
         self.availablePoses = availablePoses
         self.recommendedLevel = recommendedLevel
+        self.rewards = rewards
     }
 
     init(from decoder: Decoder) throws {
@@ -62,6 +66,9 @@ struct RaidBoss: Identifiable, Hashable, Decodable {
         // 🛟 Fallback für alte JSONs
         recommendedLevel =
             try c.decodeIfPresent(Int.self, forKey: .recommendedLevel) ?? 1
+        rewards =
+            try c.decodeIfPresent(StoryRewards.self, forKey: .rewards)
+            ?? StoryRewards(xp: 100, coins: 50)  // 🛟 Fallback
     }
 }
 
