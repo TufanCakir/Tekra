@@ -1,7 +1,7 @@
 [
     {
-        "id": "cyber_titan",
-        "name": "Cyber Titan Unit-01",
+        "id": "frozen_king",
+        "name": "Frozen King",
         "imageName": "story_frozen_king",
         "maxHP": 1500,
         "attackPower": 45,

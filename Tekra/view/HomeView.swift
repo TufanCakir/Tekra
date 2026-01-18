@@ -62,7 +62,7 @@ struct HomeView: View {
                             MenuButton(title: "Event", icon: "gamecontroller")
                         }
 
-                        NavigationLink(destination: RaidView()) {
+                        NavigationLink(destination: RaidListView()) {
                             MenuButton(title: "Raid", icon: "dpad")
                         }
                     }

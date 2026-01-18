@@ -8,7 +8,7 @@
 import CoreGraphics
 import Foundation
 
-struct RaidBoss: Codable, Identifiable {
+struct RaidBoss: Identifiable, Hashable, Decodable {
     let id: String
     let name: String
     let imageName: String
